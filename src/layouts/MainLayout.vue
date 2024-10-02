@@ -18,16 +18,16 @@
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <q-scroll-area style="height: calc(100% - 100px)">
         <q-list>
-          <q-item v-for="conversation in conversations" :key="conversation.id" clickable v-ripple>
+          <q-item v-for="channel in channelsStore.channels" :key="channel.id" clickable v-ripple>
             <q-item-section avatar>
               <q-avatar>
-                <img :src="conversation.avatar" />
+                <img :src="channel.avatar" />
               </q-avatar>
             </q-item-section>
 
             <q-item-section>
               <q-item-label lines="1">
-                {{ conversation.name }}
+                {{ channel.name }}
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -44,84 +44,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useChannelsStore } from 'src/stores/channels'
 
-const conversations = [
-  {
-    id: 1,
-    name: 'First Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 2,
-    name: 'Second Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 3,
-    name: 'Third Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 4,
-    name: 'Fourth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 5,
-    name: 'Fifth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 6,
-    name: 'Sixth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 7,
-    name: 'Seventh Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 8,
-    name: 'Eighth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 9,
-    name: 'Ninth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 10,
-    name: 'Tenth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 11,
-    name: 'Eleventh Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 12,
-    name: 'Twelfth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 13,
-    name: 'Thirteenth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 14,
-    name: 'Fourteenth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  },
-  {
-    id: 15,
-    name: 'Fifteenth Channel',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
-  }
-]
+const channelsStore = useChannelsStore()
 
 defineOptions({
   name: 'MainLayout'
