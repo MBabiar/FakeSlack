@@ -8,35 +8,32 @@
           round
           icon="menu"
           aria-label="Menu"
+          class="lt-md"
           @click="toggleLeftDrawer"
         />
-
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
+        <q-toolbar-title> FakeSlack </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+      <q-scroll-area style="height: calc(100% - 100px)">
+        <q-list>
+          <q-item v-for="conversation in conversations" :key="conversation.id" clickable v-ripple>
+            <q-item-section avatar>
+              <q-avatar>
+                <img :src="conversation.avatar" />
+              </q-avatar>
+            </q-item-section>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
+            <q-item-section>
+              <q-item-label lines="1">
+                {{ conversation.name }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+      <div>Tu bude Tvoj Profil</div>
     </q-drawer>
 
     <q-page-container>
@@ -46,61 +43,93 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { EssentialLinkProps } from 'components/EssentialLink.vue';
+import { ref } from 'vue'
+
+const conversations = [
+  {
+    id: 1,
+    name: 'First Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 2,
+    name: 'Second Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 3,
+    name: 'Third Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 4,
+    name: 'Fourth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 5,
+    name: 'Fifth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 6,
+    name: 'Sixth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 7,
+    name: 'Seventh Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 8,
+    name: 'Eighth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 9,
+    name: 'Ninth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 10,
+    name: 'Tenth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 11,
+    name: 'Eleventh Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 12,
+    name: 'Twelfth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 13,
+    name: 'Thirteenth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 14,
+    name: 'Fourteenth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  },
+  {
+    id: 15,
+    name: 'Fifteenth Channel',
+    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg'
+  }
+]
 
 defineOptions({
   name: 'MainLayout'
-});
+})
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-];
+const leftDrawerOpen = ref(false)
 
-const leftDrawerOpen = ref(false);
-
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value
 }
 </script>
