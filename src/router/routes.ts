@@ -18,6 +18,13 @@ const routes: RouteRecordRaw[] = [
     children: [{ path: '', component: () => import('pages/auth/RegisterPage.vue') }]
   },
 
+  // Main routes
+  {
+    path: '/index',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [{ path: '', component: () => import('pages/IndexPage.vue') }]
+  },
+
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')

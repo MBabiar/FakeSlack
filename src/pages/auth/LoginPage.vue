@@ -1,80 +1,67 @@
 <template>
-  <q-card class="auth-card q-pa-lg">
-    <q-card-section>
-      <div class="text-h5 text-weight-bold text-center text-grey-3">Welcome Back!</div>
-      <div class="text-caption text-center text-grey">We're excited to see you again!</div>
-    </q-card-section>
+  <q-card-section>
+    <h5 class="text-weight-bold text-center text-grey-4 q-ma-none">Welcome Back!</h5>
+  </q-card-section>
 
-    <q-card-section>
-      <q-form @submit="onLogin" class="q-gutter-y-sm">
-        <q-input
-          v-model="loginForm.email"
-          label="Email"
-          type="email"
-          dark
-          bg-color="grey-10"
-          outlined
-          :rules="[(val) => !!val || 'Email is required']"
-        />
+  <q-card-section>
+    <q-form @submit="onLogin" class="q-gutter-y-sm">
+      <CustomInput
+        v-model="loginForm.email"
+        label="Email"
+        :rules="[(val: any) => !!val || 'Email is required', (val: any) => validateEmail(val) || 'Invalid email']"
+      />
 
-        <q-input
-          v-model="loginForm.password"
-          label="Password"
-          :type="isPwd ? 'password' : 'text'"
-          dark
-          bg-color="grey-10"
-          outlined
-          :rules="[(val) => !!val || 'Password is required']"
-        >
-          <template v-slot:append>
-            <q-icon
-              :name="isPwd ? 'visibility_off' : 'visibility'"
-              class="cursor-pointer"
-              @click="isPwd = !isPwd"
-            />
-          </template>
-        </q-input>
-        <q-btn rounded label="Login" type="submit" color="primary" class="full-width" size="lg" />
-      </q-form>
-      <div class="text-caption text-center text-grey q-mt-md">
-        Don't have an account?
-        <router-link to="/register" class="text-primary">Register</router-link>
-      </div>
-    </q-card-section>
-  </q-card>
+      <CustomInput
+        v-model="loginForm.password"
+        label="Password"
+        :type="passwordVisibility ? 'password' : 'text'"
+        :rules="[(val: any) => !!val || 'Password is required', (val: any) => validatePassword(val) || 'Password must be at least 8 characters']"
+      >
+        <template v-slot:append>
+          <q-icon
+            :name="passwordVisibility ? 'visibility_off' : 'visibility'"
+            class="cursor-pointer"
+            @click="passwordVisibility = !passwordVisibility"
+          />
+        </template>
+      </CustomInput>
+
+      <q-btn rounded label="Login" type="submit" color="primary" class="full-width" size="lg" />
+    </q-form>
+
+    <div class="text-caption text-center text-grey q-mt-md">
+      Don't have an account?
+      <router-link to="/register" class="text-primary">Register</router-link>
+    </div>
+  </q-card-section>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+  import { ref } from 'vue'
+  import CustomInput from 'src/components/Input.vue'
+  import { useRouter } from 'vue-router'
 
-export default defineComponent({
-  name: 'LoginPage',
-  setup() {
-    const isPwd = ref(true)
-    const loginForm = ref({
-      email: '',
-      password: ''
-    })
+  const router = useRouter()
 
-    const onLogin = () => {
-      // Implement login logic here
-      console.log('Login:', loginForm.value)
-    }
+  defineOptions({
+    name: 'LoginPage'
+  })
+  const passwordVisibility = ref(true)
+  const loginForm = ref({
+    email: '',
+    password: ''
+  })
 
-    return {
-      isPwd,
-      loginForm,
-      onLogin
-    }
+  function validateEmail(email: string): boolean {
+    return /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/.test(email)
   }
-})
-</script>
 
-<style>
-.q-field--outlined .q-field__control:before {
-  border-color: #202225;
-}
-.q-field--outlined .q-field__control {
-  border-radius: 12px;
-}
-</style>
+  function validatePassword(password: string): boolean {
+    return password.length >= 8
+  }
+
+  const onLogin = () => {
+    console.log('Login:', loginForm.value)
+    router.push({ path: '/index' })
+  }
+</script>
