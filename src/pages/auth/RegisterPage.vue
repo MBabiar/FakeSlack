@@ -64,39 +64,40 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import CustomInput from 'src/components/Input.vue'
-  import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import CustomInput from 'src/components/Input.vue'
+import { useRouter } from 'vue-router'
 
-  const router = useRouter()
+const router = useRouter()
 
-  defineOptions({
-    name: 'RegisterPage'
-  })
+defineOptions({
+  name: 'RegisterPage'
+})
 
-  const passwordVisibility = ref(true)
-  const registerForm = ref({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    passwordConfirm: ''
-  })
+const passwordVisibility = ref(true)
+const registerForm = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  passwordConfirm: ''
+})
 
-  function validateEmail(email: string): boolean {
-    return /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/.test(email)
-  }
+function validateEmail(email: string) {
+  return /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/.test(email)
+}
 
-  function validatePassword(password: string): boolean {
-    return password.length >= 8
-  }
+function validatePassword(password: string) {
+  const hasUpperCase = /[A-Z]/.test(password)
+  const hasNumber = /\d/.test(password)
+  return password.length >= 8 && hasUpperCase && hasNumber
+}
 
-  function validatePasswordMatch(password: string, passwordConfirm: string): boolean {
-    return password === passwordConfirm
-  }
+function validatePasswordMatch(password: string, passwordConfirm: string) {
+  return password === passwordConfirm
+}
 
-  const onRegister = () => {
-    console.log('Register:', registerForm.value)
-    router.push({ path: '/index' })
-  }
+const onRegister = () => {
+  router.push({ path: '/index' })
+}
 </script>

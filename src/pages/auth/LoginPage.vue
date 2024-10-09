@@ -37,31 +37,31 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import CustomInput from 'src/components/Input.vue'
-  import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import CustomInput from 'src/components/Input.vue'
+import { useRouter } from 'vue-router'
+import validator from 'validator'
 
-  const router = useRouter()
+const router = useRouter()
 
-  defineOptions({
-    name: 'LoginPage'
-  })
-  const passwordVisibility = ref(true)
-  const loginForm = ref({
-    email: '',
-    password: ''
-  })
+defineOptions({
+  name: 'LoginPage'
+})
+const passwordVisibility = ref(true)
+const loginForm = ref({
+  email: '',
+  password: ''
+})
 
-  function validateEmail(email: string): boolean {
-    return /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/.test(email)
-  }
+function validateEmail(email: string) {
+  return validator.isEmail(email)
+}
 
-  function validatePassword(password: string): boolean {
-    return password.length >= 8
-  }
+function validatePassword(password: string) {
+  return password.length >= 8
+}
 
-  const onLogin = () => {
-    console.log('Login:', loginForm.value)
-    router.push({ path: '/index' })
-  }
+const onLogin = () => {
+  router.push({ path: '/index' })
+}
 </script>
