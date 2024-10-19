@@ -1,0 +1,51 @@
+@startuml DBS - Zadanie 4
+
+left to right direction
+skinparam class {
+    FontStyle bold
+}
+
+!define primary_key(x) <b><color:#b8861b><&key></color> <color:#b8861b>x</color></b>
+!define foreign_key(x) <b><color:#464600><&key></color> <color:#464600>x</color></b>
+!define column(x) <b><color:#efefef></color>x</b>
+!define value(x) <b><color:#7e2798>x</color></b>
+!define table(x) entity x << (T, white) >>
+
+table(users) {
+    primary_key(user_id)
+    --
+    column(email) 
+    column(username) 
+    column(first_name) 
+    column(last_name)
+    column(password)
+    column(state)
+    column(created_at)
+}
+
+table(channels) {
+    primary_key(channel_id)
+    --
+    column(channel_name) 
+    column(channel_type)
+    column(created_at)
+}
+
+table(messages) {
+    primary_key(message_id)
+    --
+    foreign_key(user_id)
+    foreign_key(channel_id)
+    --
+    column(content)
+    column(created_at)
+    column(edited_at)
+}
+
+' Relationships
+users }|--o{ channels
+' messages::channel_id }o--|| channels::channel_id
+channels::channel_id ||--o{ messages::channel_id
+users::user_id ||--o{ messages::user_id
+
+@enduml
