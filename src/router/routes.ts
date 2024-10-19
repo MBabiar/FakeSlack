@@ -3,7 +3,7 @@ import { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/login'
+    component: () => import('layouts/MainLayout.vue')
   },
 
   // Auth routes
