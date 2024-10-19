@@ -21,10 +21,10 @@
 
               <q-menu touch-position context-menu>
                 <q-list dense style="min-width: 100px">
-                  <q-item clickable v-close-popup>
+                  <q-item clickable @click="confirmLeaveChannel = true" v-close-popup>
                     <q-item-section>Leave channel</q-item-section>
                   </q-item>
-                  <q-item clickable v-close-popup>
+                  <q-item clickable @click="confirmCloseChannel = true" v-close-popup>
                     <q-item-section>Close channel</q-item-section>
                   </q-item>
                 </q-list>
@@ -78,6 +78,13 @@
                 </q-item>
                 <q-separator />
                 <q-item clickable v-close-popup>
+                  <q-item-section @click="toggleNotifications">Notifications</q-item-section>
+                  <q-item-section>
+                    <q-toggle v-model="notificationsEnabled" color="primary" />
+                  </q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup>
                   <q-item-section @click="confirmLogout = true">Log out</q-item-section>
                 </q-item>
               </q-list>
@@ -91,6 +98,32 @@
       </div>
     </q-drawer>
 
+    <q-dialog v-model="confirmLeaveChannel" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <span class="q-ml-sm">Are you sure you want to leave channel?</span>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn label="No" color="primary" v-close-popup />
+          <q-btn flat label="Yes" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <q-dialog v-model="confirmCloseChannel" persistent>
+      <q-card>
+        <q-card-section class="row items-center">
+          <span class="q-ml-sm">Are you sure you want to close channel?</span>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn label="No" color="primary" v-close-popup />
+          <q-btn flat label="Yes" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="confirmLogout" persistent>
       <q-card>
         <q-card-section class="row items-center">
@@ -99,7 +132,7 @@
 
         <q-card-actions align="right">
           <q-btn label="No" color="primary" v-close-popup />
-          <q-btn flat label="Yes" color="primary" v-close-popup />
+          <q-btn flat label="Yes" @click="onLogout" color="primary" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -148,13 +181,31 @@
             </div>
           </template>
 
-          <div v-for="(message, index) in messages" :key="index">
-            <q-chat-message :name="message.name" :text="message.text" :sent="message.me" />
+          <div
+            v-for="(message, index) in messages"
+            :key="index"
+            :class="{ highlighted: isHighlighted(message) }"
+            class="q-px-sm"
+          >
+            <q-chat-message
+              v-if="shouldDisplayName(index)"
+              :name="message.name"
+              :text="message.text"
+              :sent="message.me"
+              class="first-message"
+            />
+            <q-chat-message
+              v-else
+              :name="''"
+              :text="message.text"
+              :sent="message.me"
+              class="next-message"
+            />
           </div>
         </q-infinite-scroll>
       </div>
 
-      <div style="margin-top: auto">
+      <div style="margin-top: 0">
         <q-input outlined v-model="text" label="Message or Command (/)" @keyup.enter="sendMessage">
           ><q-tooltip v-model="isCommand"
             ><div v-if="!commandFormatSelected">
@@ -177,8 +228,11 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
+import { useRouter } from 'vue-router'
+import { Notify } from 'quasar'
 
 const channelsStore = useChannelsStore()
+const router = useRouter()
 
 defineOptions({
   name: 'MainLayout'
@@ -191,18 +245,32 @@ function toggleLeftDrawer() {
 }
 
 const confirmLogout = ref(false)
+const confirmLeaveChannel = ref(false)
+const confirmCloseChannel = ref(false)
 const createChannel = ref(false)
 
 const channelName = ref('')
 const chatContainer = useTemplateRef('chatContainer')
 const state = ref('online')
 
+const notificationsEnabled = ref(true)
+
+const toggleNotifications = () => {
+  notificationsEnabled.value = !notificationsEnabled.value
+}
+
 const switchState = function (newState: string) {
   state.value = newState
 }
 
-const onLoad = function () {
-  console.log('loading')
+const onLoad = (index: number, done: () => void) => {
+  setTimeout(() => {
+    messages.value.unshift({
+      name: 'Mário Babiar',
+      text: ['Loading more messages...']
+    })
+    done()
+  }, 1000)
 }
 
 const messages = ref([
@@ -242,7 +310,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['Alright, 8 PM it is then!', 'See you all later 😊'],
+    text: ['Alright, 8 PM it is then!'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['See you all later 😊'],
     me: true
   },
   {
@@ -255,7 +328,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ["We're thinking about trying Valorant.", 'Wanna join?'],
+    text: ["We're thinking about trying Valorant."],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['Wanna join?'],
     me: true
   },
   {
@@ -276,7 +354,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ["I'll set up the server.", "Let's crush it tonight 💪"],
+    text: ["I'll set up the server."],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ["Let's crush it tonight 💪"],
     me: true
   },
   {
@@ -314,7 +397,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['That’s alright, you can still spectate!', 'No pressure!'],
+    text: ['That’s alright, you can still spectate!'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['No pressure!'],
     me: true
   },
   {
@@ -331,7 +419,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['Let’s make this a weekly thing.', 'Gaming nights, every Friday!'],
+    text: ['Let’s make this a weekly thing.'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['Gaming nights, every Friday!'],
     me: true
   },
   {
@@ -390,7 +483,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['Next Friday, same time!', 'Bye everyone 👋'],
+    text: ['Next Friday, same time!'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['Bye everyone 👋'],
     me: true
   },
   {
@@ -420,7 +518,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['I’ll try it this weekend!', 'Thanks Elena!'],
+    text: ['I’ll try it this weekend!'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['Thanks Elena!'],
     me: true
   },
   {
@@ -458,7 +561,12 @@ const messages = ref([
   },
   {
     name: 'Samuel Csető',
-    text: ['Same here!', 'You guys are the best 😊'],
+    text: ['Same here!'],
+    me: true
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['You guys are the best 😊'],
     me: true
   },
   {
@@ -523,8 +631,25 @@ const messages = ref([
     name: 'Samuel Csető',
     text: ['Bye!'],
     me: true
+  },
+  {
+    name: 'Mário Babiar',
+    text: ['Yo! Samuel Csető, you there?']
+  },
+  {
+    name: 'Mário Babiar',
+    text: ['Yo! @Samuel Csető, you there?']
+  },
+  {
+    name: 'Samuel Csető',
+    text: ['Hey, what’s up?'],
+    me: true
   }
 ])
+
+const isHighlighted = (message: { text: string[] }) => {
+  return message.text.some((text: string) => text.includes('@Samuel Csető'))
+}
 
 const text = ref('')
 const isCommand = computed(() => {
@@ -549,6 +674,10 @@ const sendMessage = function () {
       text: [text.value],
       me: true
     })
+
+    // Show notification for new message
+    showNotification('Samuel Csető', text.value)
+
     text.value = ''
     // scroll to bottom
     setTimeout(() => {
@@ -556,4 +685,54 @@ const sendMessage = function () {
     }, 10)
   }
 }
+
+const shouldDisplayName = (index: number) => {
+  if (index === 0) return true
+  return messages.value[index].name !== messages.value[index - 1].name
+}
+
+const onLogout = () => {
+  router.push({ path: '/login' })
+}
+
+const showNotification = (senderName: string, message: string) => {
+  Notify.create({
+    message: `${senderName} says: ${message}`,
+    color: 'primary',
+    multiLine: true,
+    position: 'top',
+    actions: [
+      {
+        label: 'Reply',
+        color: 'yellow',
+        handler: () => {
+          /* ... */
+        }
+      },
+      {
+        label: 'Dismiss',
+        color: 'white',
+        handler: () => {
+          /* ... */
+        }
+      }
+    ]
+  })
+}
 </script>
+
+<style scoped>
+.highlighted {
+  background-color: rgba(221, 221, 30, 0.25); /* Light Blue */
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.first-message {
+  margin: 4px 0 4px 0;
+}
+
+.next-message {
+  margin: 2px 0 2px 0;
+}
+</style>
