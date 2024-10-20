@@ -253,7 +253,8 @@
 import { computed, ref, useTemplateRef } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
-import { Notify } from 'quasar'
+
+import { useWebNotification } from '@vueuse/core'
 
 const channelsStore = useChannelsStore()
 const router = useRouter()
@@ -702,8 +703,19 @@ const sendMessage = function () {
       me: true
     })
 
-    // Show notification for new message
-    showNotification('Samuel Csető', text.value)
+    const { isSupported, show } = useWebNotification({
+      title: 'New message from Samuel Csető',
+      dir: 'auto',
+      lang: 'en',
+      renotify: true,
+      tag: 'test',
+      body: text.value
+    })
+
+    if (isSupported.value && notificationsEnabled.value) {
+      console.log('Notification shown')
+      show()
+    }
 
     text.value = ''
     // scroll to bottom
@@ -744,31 +756,6 @@ const closeChannel = () => {
     (channel) => channel.id !== closeChannelId.value
   )
   closeChannelId.value = 0
-}
-
-const showNotification = (senderName: string, message: string) => {
-  Notify.create({
-    message: `${senderName} says: ${message}`,
-    color: 'primary',
-    multiLine: true,
-    position: 'top',
-    actions: [
-      {
-        label: 'Reply',
-        color: 'yellow',
-        handler: () => {
-          /* ... */
-        }
-      },
-      {
-        label: 'Dismiss',
-        color: 'white',
-        handler: () => {
-          /* ... */
-        }
-      }
-    ]
-  })
 }
 </script>
 
