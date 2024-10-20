@@ -4,7 +4,13 @@
       <div style="height: 100vh; display: flex; flex-direction: column">
         <q-scroll-area style="flex: 1">
           <q-list>
-            <q-item v-for="channel in channelsStore.channels" :key="channel.id" clickable v-ripple>
+            <q-item
+              v-for="channel in channelsStore.channels"
+              :key="channel.id"
+              clickable
+              v-ripple
+              @click="messages.splice(-5)"
+            >
               <q-item-section avatar>
                 <q-icon :name="channel.private ? 'lock' : 'public'" color="primary" />
               </q-item-section>
@@ -21,10 +27,28 @@
 
               <q-menu touch-position context-menu>
                 <q-list dense style="min-width: 100px">
-                  <q-item clickable @click="confirmLeaveChannel = true" v-close-popup>
+                  <q-item
+                    clickable
+                    @click="
+                      (() => {
+                        confirmLeaveChannel = true
+                        leaveChannelId = channel.id
+                      })()
+                    "
+                    v-close-popup
+                  >
                     <q-item-section>Leave channel</q-item-section>
                   </q-item>
-                  <q-item clickable @click="confirmCloseChannel = true" v-close-popup>
+                  <q-item
+                    clickable
+                    @click="
+                      (() => {
+                        confirmCloseChannel = true
+                        closeChannelId = channel.id
+                      })()
+                    "
+                    v-close-popup
+                  >
                     <q-item-section>Close channel</q-item-section>
                   </q-item>
                 </q-list>
@@ -106,7 +130,7 @@
 
         <q-card-actions align="right">
           <q-btn label="No" color="primary" v-close-popup />
-          <q-btn flat label="Yes" color="primary" v-close-popup />
+          <q-btn flat label="Yes" color="primary" v-close-popup @click="leaveChannel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -119,7 +143,7 @@
 
         <q-card-actions align="right">
           <q-btn label="No" color="primary" v-close-popup />
-          <q-btn flat label="Yes" color="primary" v-close-popup />
+          <q-btn flat label="Yes" color="primary" v-close-popup @click="closeChannel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -152,7 +176,7 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn label="Create" color="primary" v-close-popup />
+          <q-btn label="Create" color="primary" v-close-popup @click="createChannelFunc" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -248,6 +272,9 @@ const confirmLogout = ref(false)
 const confirmLeaveChannel = ref(false)
 const confirmCloseChannel = ref(false)
 const createChannel = ref(false)
+
+const leaveChannelId = ref(0)
+const closeChannelId = ref(0)
 
 const channelName = ref('')
 const chatContainer = useTemplateRef('chatContainer')
@@ -693,6 +720,30 @@ const shouldDisplayName = (index: number) => {
 
 const onLogout = () => {
   router.push({ path: '/login' })
+}
+
+const createChannelFunc = () => {
+  channelsStore.channels.push({
+    id: channelsStore.channels.length + 1,
+    name: channelName.value,
+    new: true,
+    private: false
+  })
+  channelName.value = ''
+}
+
+const leaveChannel = () => {
+  channelsStore.channels = channelsStore.channels.filter(
+    (channel) => channel.id !== leaveChannelId.value
+  )
+  leaveChannelId.value = 0
+}
+
+const closeChannel = () => {
+  channelsStore.channels = channelsStore.channels.filter(
+    (channel) => channel.id !== closeChannelId.value
+  )
+  closeChannelId.value = 0
 }
 
 const showNotification = (senderName: string, message: string) => {
