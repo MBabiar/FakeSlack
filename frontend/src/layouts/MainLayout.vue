@@ -761,7 +761,7 @@ const closeChannel = () => {
 
 <style scoped>
 .highlighted {
-  background-color: rgba(221, 221, 30, 0.25); /* Light Blue */
+  background-color: rgba(221, 221, 30, 0.25);
   padding-top: 5px;
   padding-bottom: 5px;
 }
