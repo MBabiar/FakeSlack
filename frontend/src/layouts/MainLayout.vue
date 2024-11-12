@@ -250,7 +250,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 
@@ -729,6 +729,11 @@ const shouldDisplayName = (index: number) => {
   if (index === 0) return true
   return messages.value[index].name !== messages.value[index - 1].name
 }
+
+onMounted(() => {
+  // load channels
+  channelsStore.loadChannels()
+})
 
 const onLogout = () => {
   router.push({ path: '/login' })

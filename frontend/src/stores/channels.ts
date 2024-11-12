@@ -1,77 +1,40 @@
 import { defineStore } from 'pinia'
-import io from 'socket.io-client'
 import { ref } from 'vue'
+import { useIdentityStore } from './identity-store'
 
 export const useChannelsStore = defineStore('channels', () => {
+  const identityStore = useIdentityStore()
+  const loading = ref(false)
+
   const channels = ref([
     {
       id: 1,
-      name: 'Chill Vibes',
-      private: true,
-      new: false
-    },
-    {
-      id: 2,
-      name: 'Fitness Hub',
-      private: true,
-      new: false
-    },
-    {
-      id: 3,
-      name: "Gamer's Paradise",
-      private: false,
-      new: false
-    },
-    {
-      id: 4,
-      name: 'Art & Crafts Collective',
-      private: false,
-      new: false
-    },
-    {
-      id: 5,
-      name: 'Tech Savvy',
-      private: true,
-      new: true
-    },
-    {
-      id: 6,
-      name: 'Health and Harmony',
-      private: false,
-      new: false
-    },
-    {
-      id: 7,
-      name: 'Music Junkies',
-      private: false,
-      new: false
-    },
-    {
-      id: 8,
-      name: 'The Coding Den',
-      private: true,
-      new: false
-    },
-    {
-      id: 9,
-      name: 'Creative Space',
-      private: true,
-      new: false
-    },
-    {
-      id: 10,
-      name: 'Foodies United',
+      name: 'LOADING',
       private: false,
       new: false
     }
   ])
 
   const loadChannels = () => {
-    // Fetch channels from the server
-    const socket = io('http://localhost:3333', { auth: { token: 'XXX' } })
+    loading.value = true
     console.log('Fetching channels...')
-    socket.emit('getChannels')
+    identityStore.socket.emit('getChannels')
+
+    identityStore.socket.on('channels', (data: unknown) => {
+      console.log('Got channels:', data)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const channelsMapped = (data as any[]).map((channel) => {
+        return {
+          id: channel.id,
+          name: channel.name,
+          private: channel.private,
+          new: false
+        }
+      })
+      channels.value = channelsMapped
+      loading.value = false
+    })
   }
 
-  return { channels, loadChannels }
+  return { channels, loadChannels, loading }
 })
