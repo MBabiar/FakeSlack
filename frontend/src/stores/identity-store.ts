@@ -16,8 +16,14 @@ export const useIdentityStore = defineStore('identity', () => {
     })
 
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+      localStorage.setItem('token', response.data.token.token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token.token}`
+
+      id.value = response.data.user.id
+      firstName.value = response.data.user.firstName
+      lastName.value = response.data.user.lastName
+      email.value = response.data.user.email
+      nickname.value = response.data.user.nickname
     }
   }
 

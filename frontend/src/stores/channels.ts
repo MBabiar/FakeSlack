@@ -1,63 +1,9 @@
 import { defineStore } from 'pinia'
-import io from 'socket.io-client'
 import { ref } from 'vue'
+import { connectSocket } from 'src/stores/socket'
 
 export const useChannelsStore = defineStore('channels', () => {
   const channels = ref([
-    {
-      id: 1,
-      name: 'Chill Vibes',
-      private: true,
-      new: false
-    },
-    {
-      id: 2,
-      name: 'Fitness Hub',
-      private: true,
-      new: false
-    },
-    {
-      id: 3,
-      name: "Gamer's Paradise",
-      private: false,
-      new: false
-    },
-    {
-      id: 4,
-      name: 'Art & Crafts Collective',
-      private: false,
-      new: false
-    },
-    {
-      id: 5,
-      name: 'Tech Savvy',
-      private: true,
-      new: true
-    },
-    {
-      id: 6,
-      name: 'Health and Harmony',
-      private: false,
-      new: false
-    },
-    {
-      id: 7,
-      name: 'Music Junkies',
-      private: false,
-      new: false
-    },
-    {
-      id: 8,
-      name: 'The Coding Den',
-      private: true,
-      new: false
-    },
-    {
-      id: 9,
-      name: 'Creative Space',
-      private: true,
-      new: false
-    },
     {
       id: 10,
       name: 'Foodies United',
@@ -67,10 +13,39 @@ export const useChannelsStore = defineStore('channels', () => {
   ])
 
   const loadChannels = () => {
-    // Fetch channels from the server
-    const socket = io('http://localhost:3333', { auth: { token: 'XXX' } })
-    console.log('Fetching channels...')
-    socket.emit('getChannels')
+    return new Promise<void>((resolve, reject) => {
+      // Fetch channels from the server
+      const socket = connectSocket()
+      if (!socket) {
+        reject('Socket is not connected')
+        return
+      }
+      socket.emit('getChannels')
+
+      // Listen for the channels event
+      socket.on('channels', (receivedChannels) => {
+        // Update the channels ref
+        if (receivedChannels) {
+          channels.value = receivedChannels
+        } else {
+          channels.value = [
+            {
+              id: 10,
+              name: 'Foodies United',
+              private: false,
+              new: false
+            }
+          ]
+        }
+        resolve()
+      })
+
+      // Listen for error event
+      socket.on('error', (errorMessage) => {
+        console.error('Error:', errorMessage)
+        reject(errorMessage)
+      })
+    })
   }
 
   return { channels, loadChannels }

@@ -9,7 +9,7 @@
               :key="channel.id"
               clickable
               v-ripple
-              @click="messages.splice(-5)"
+              @click="selectChannel(channel.id)"
             >
               <q-item-section avatar>
                 <q-icon :name="channel.private ? 'lock' : 'public'" color="primary" />
@@ -115,8 +115,11 @@
             </q-menu>
           </q-btn>
           <div>
-            <div>Samuel Csető<q-tooltip>samuelcseto</q-tooltip></div>
-            <div style="color: grey">samuelcseto@gmail.com</div>
+            <div>
+              {{ identityStore.firstName }} {{ identityStore.lastName
+              }}<q-tooltip>{{ identityStore.nickname }}</q-tooltip>
+            </div>
+            <div style="color: grey">{{ identityStore.email }}</div>
           </div>
         </div>
       </div>
@@ -206,32 +209,39 @@
           </template>
 
           <div
-            v-for="(message, index) in messages"
-            :key="index"
-            :class="{ highlighted: isHighlighted(message) }"
-            class="q-px-sm"
+            v-if="
+              selectedChannelId !== null &&
+              messagesStore.messages[selectedChannelId] &&
+              messagesStore.messages[selectedChannelId].length > 0
+            "
           >
-            <q-chat-message
-              v-if="shouldDisplayName(index)"
-              :name="message.name"
-              :text="message.text"
-              :sent="message.me"
-              class="first-message"
-            />
-            <q-chat-message
-              v-else
-              :name="''"
-              :text="message.text"
-              :sent="message.me"
-              class="next-message"
-            />
+            <div
+              v-for="(message, index) in messagesStore.messages[selectedChannelId]"
+              :key="index"
+              :class="{ highlighted: message && isHighlighted(message) }"
+              class="q-px-sm"
+            >
+              <q-chat-message
+                v-if="shouldDisplayName(index)"
+                :name="message.name"
+                :text="message.text"
+                :sent="message.me"
+                class="first-message"
+              />
+              <q-chat-message
+                v-else
+                :name="''"
+                :text="message.text"
+                :sent="message.me"
+                class="next-message"
+              />
+            </div>
           </div>
         </q-infinite-scroll>
       </div>
-
       <div style="margin-top: 0">
         <q-input outlined v-model="text" label="Message or Command (/)" @keyup.enter="sendMessage">
-          ><q-tooltip v-model="isCommand"
+          <q-tooltip v-model="isCommand"
             ><div v-if="!commandFormatSelected">
               Command Detected: Enter command to see arguments format
             </div>
@@ -250,14 +260,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, onMounted } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
-
+import { useIdentityStore } from 'src/stores/identity-store'
 import { useWebNotification } from '@vueuse/core'
+import { useMessagesStore } from 'src/stores/messages'
 
-const channelsStore = useChannelsStore()
 const router = useRouter()
+const channelsStore = useChannelsStore()
+const identityStore = useIdentityStore()
+const messagesStore = useMessagesStore()
+const isLoading = ref(true)
+
+const selectedChannelId = ref<number | null>(null)
+const selectChannel = async (channelId: number) => {
+  selectedChannelId.value = channelId
+  await messagesStore.fetchMessagesForChannel(channelId)
+  console.log('Selected channel:', channelId)
+  console.log('Messages:', messagesStore.messages[channelId])
+}
 
 defineOptions({
   name: 'MainLayout'
@@ -293,390 +315,13 @@ const switchState = function (newState: string) {
 
 const onLoad = (index: number, done: () => void) => {
   setTimeout(() => {
-    messages.value.unshift({
-      name: 'Mário Babiar',
-      text: ['Loading more messages...']
-    })
+    console.log('Loading more messages')
     done()
   }, 1000)
 }
 
-const messages = ref([
-  {
-    name: 'Mário Babiar',
-    text: ['Hey, how are you?']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["I'm good, lol 😂"],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Anyone up for a game tonight?']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Sure, count me in!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['I can join too.']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Nice! What time works for you?'],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Maybe 8 PM?']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Sounds good to me!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Alright, 8 PM it is then!'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['See you all later 😊'],
-    me: true
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Cool! Looking forward to it.']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Hey guys, what game are you playing tonight?']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["We're thinking about trying Valorant."],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Wanna join?'],
-    me: true
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Oh, I’m not very good at shooters, but I’ll watch!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['The more, the merrier!']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['See you all at 8!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Sounds like a plan!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["I'll set up the server."],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["Let's crush it tonight 💪"],
-    me: true
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['We got this!']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Good luck everyone 😄']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['GG, see you in the game!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["GG! Can't wait!"],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Wait, do I need to download anything?']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Yeah, you need to install Valorant.']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['It’s free, so don’t worry.']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['I just realized my internet is slow today… 😓']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['That’s alright, you can still spectate!'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['No pressure!'],
-    me: true
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ["Yep, it's just for fun!"]
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Downloading now. Should be ready by 8!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Great!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Let’s make this a weekly thing.'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Gaming nights, every Friday!'],
-    me: true
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['That sounds like fun!']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['I’m in!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Let’s do it!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Count me in too!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Friday nights are officially gaming nights then 😎'],
-    me: true
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Yay! 🎉']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['🎮🎮🎮']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['GG everyone!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['GG! Talk to you later!'],
-    me: true
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Take care everyone!']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Bye!']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['See you all soon!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['See you next Friday!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Next Friday, same time!'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Bye everyone 👋'],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Btw, I found a cool new recipe for cookies. Wanna try?']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['I’m always up for cookies!']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Me too!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['I could use some cookies now 🍪'],
-    me: true
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Drop the recipe!']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Alright, here’s the link to the recipe: www.cookies.com']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['I’ll try it this weekend!'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Thanks Elena!'],
-    me: true
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['I might make them tonight.']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Cookies for gaming night?']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Yes, please!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Let’s make it a tradition! Gaming + cookies = perfection.'],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['That’s the spirit! 😄']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Alright, cookies for Friday night it is!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['This is gonna be awesome!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['I love this group!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Same here!'],
-    me: true
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['You guys are the best 😊'],
-    me: true
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Awww, we love you too!']
-  },
-  {
-    name: 'Elena Novak',
-    text: ['Group hug! 🤗']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Haha, let’s not get too emotional now 😆']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Alright, alright, back to planning!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ["Next week's game suggestions?"],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['How about Rocket League?']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['I love that game!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['Rocket League it is!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Can’t wait!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Let’s do it! Next Friday: Rocket League + cookies!'],
-    me: true
-  },
-  {
-    name: 'Elena Novak',
-    text: ['🎮🍪🎮']
-  },
-  {
-    name: 'Anna Horváth',
-    text: ['Perfect combo!']
-  },
-  {
-    name: 'Lucas Kováč',
-    text: ['GG everyone, see you then!']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Take care, everyone!']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Bye!'],
-    me: true
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Yo! Samuel Csető, you there?']
-  },
-  {
-    name: 'Mário Babiar',
-    text: ['Yo! @Samuel Csető, you there?']
-  },
-  {
-    name: 'Samuel Csető',
-    text: ['Hey, what’s up?'],
-    me: true
-  }
-])
-
 const isHighlighted = (message: { text: string[] }) => {
-  return message.text.some((text: string) => text.includes('@Samuel Csető'))
+  return message.text.some((text: string) => text.includes(`@${identityStore.nickname}`))
 }
 
 const text = ref('')
@@ -697,11 +342,11 @@ const commandFormatSelected = computed(() => {
 
 const sendMessage = function () {
   if (text.value) {
-    messages.value.push({
-      name: 'Samuel Csető',
-      text: [text.value],
-      me: true
-    })
+    // messagesStore.messages.value.push({
+    //   name: 'Samuel Csető',
+    //   text: [text.value],
+    //   me: true
+    // })
 
     const { isSupported, show } = useWebNotification({
       title: 'New message from Samuel Csető',
@@ -727,7 +372,11 @@ const sendMessage = function () {
 
 const shouldDisplayName = (index: number) => {
   if (index === 0) return true
-  return messages.value[index].name !== messages.value[index - 1].name
+  if (selectedChannelId.value === null) return false
+  return (
+    messagesStore.messages[selectedChannelId.value][index].userId !==
+    messagesStore.messages[selectedChannelId.value][index - 1].userId
+  )
 }
 
 const onLogout = () => {
@@ -757,6 +406,19 @@ const closeChannel = () => {
   )
   closeChannelId.value = 0
 }
+
+onMounted(async () => {
+  try {
+    await channelsStore.loadChannels()
+    if (channelsStore.channels.length > 0) {
+      selectChannel(channelsStore.channels[0].id)
+    }
+  } catch (error) {
+    console.error('Failed to load channels:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <style scoped>
