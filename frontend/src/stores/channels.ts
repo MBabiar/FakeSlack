@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import io from 'socket.io-client'
 import { ref } from 'vue'
 
 export const useChannelsStore = defineStore('channels', () => {
@@ -65,5 +66,12 @@ export const useChannelsStore = defineStore('channels', () => {
     }
   ])
 
-  return { channels }
+  const loadChannels = () => {
+    // Fetch channels from the server
+    const socket = io('http://localhost:3333', { auth: { token: 'XXX' } })
+    console.log('Fetching channels...')
+    socket.emit('getChannels')
+  }
+
+  return { channels, loadChannels }
 })

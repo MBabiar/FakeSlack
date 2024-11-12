@@ -41,7 +41,9 @@ import { ref } from 'vue'
 import CustomInput from 'src/components/Input.vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
-import axios from 'axios'
+import { useIdentityStore } from 'src/stores/identity-store'
+
+const indentifyStore = useIdentityStore()
 const router = useRouter()
 
 defineOptions({
@@ -62,21 +64,7 @@ function validatePassword(password: string) {
 }
 
 const onLogin = async () => {
-  try {
-    const { data } = await axios.post('http://localhost:3333/auth/login', {
-      email: loginForm.value.email,
-      password: loginForm.value.password
-    })
-
-    // Store token if returned
-    if (data.token) {
-      localStorage.setItem('token', data.token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
-    }
-
-    router.push({ path: '/index' })
-  } catch (e) {
-    console.error(e)
-  }
+  await indentifyStore.login(loginForm.value)
+  router.push({ path: '/index' })
 }
 </script>

@@ -25,6 +25,13 @@
       />
 
       <CustomInput
+        v-model="registerForm.nickname"
+        label="Nickame"
+        type="text"
+        :rules="[(val: any) => !!val || 'Nickname is required']"
+      />
+
+      <CustomInput
         v-model="registerForm.password"
         label="Password"
         :type="passwordVisibility ? 'password' : 'text'"
@@ -67,7 +74,9 @@
 import CustomInput from 'src/components/Input.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useIdentityStore } from 'src/stores/identity-store'
+
+const identityStore = useIdentityStore()
 
 const router = useRouter()
 
@@ -81,7 +90,8 @@ const registerForm = ref({
   lastName: '',
   email: '',
   password: '',
-  passwordConfirm: ''
+  passwordConfirm: '',
+  nickname: ''
 })
 
 function validateEmail(email: string) {
@@ -99,18 +109,14 @@ function validatePasswordMatch(password: string, passwordConfirm: string) {
 }
 
 const onRegister = async () => {
-  try {
-    await axios.post('http://localhost:3333/auth/register', {
-      fullName: `${registerForm.value.firstName} ${registerForm.value.lastName}`,
-      email: registerForm.value.email,
-      password: registerForm.value.password,
-      passwordConfirmation: registerForm.value.passwordConfirm
-    })
-
-    // Registration successful
-    router.push({ path: '/auth/login' })
-  } catch (e) {
-    console.error(e)
-  }
+  await identityStore.register({
+    firstName: registerForm.value.firstName,
+    lastName: registerForm.value.lastName,
+    email: registerForm.value.email,
+    nickname: registerForm.value.nickname,
+    password: registerForm.value.password,
+    passwordConfirmation: registerForm.value.passwordConfirm
+  })
+  router.push({ path: '/auth/login' })
 }
 </script>
