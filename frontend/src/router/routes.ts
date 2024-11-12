@@ -3,26 +3,39 @@ import { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue')
+    // Change the redirect to point to login instead of index
+    redirect: () => ({ name: 'login' })
   },
 
-  // Auth routes
+  // Auth routes 
   {
-    path: '/login',
+    path: '/auth',
     component: () => import('layouts/AuthLayout.vue'),
-    children: [{ path: '', component: () => import('pages/auth/LoginPage.vue') }]
-  },
-  {
-    path: '/register',
-    component: () => import('layouts/AuthLayout.vue'),
-    children: [{ path: '', component: () => import('pages/auth/RegisterPage.vue') }]
+    meta: { guestOnly: true },
+    children: [
+      { 
+        path: 'register', 
+        name: 'register', 
+        component: () => import('pages/auth/RegisterPage.vue')
+      },
+      { 
+        path: 'login', 
+        name: 'login', 
+        component: () => import('pages/auth/LoginPage.vue')
+      }
+    ]
   },
 
   // Main routes
   {
     path: '/index',
+    meta: { requiresAuth: true },
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ path: '', component: () => import('pages/IndexPage.vue') }]
+    children: [{ 
+      path: '',
+      name: 'index', 
+      component: () => import('pages/IndexPage.vue') 
+    }]
   },
 
   {

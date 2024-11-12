@@ -16,28 +16,28 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent } from 'vue'
-  export default defineComponent({
-    name: 'CustomInput',
-    props: {
-      modelValue: {
-        type: [String, Number],
-        default: ''
-      },
-      label: {
-        type: String,
-        required: true
-      }
+import { defineComponent } from 'vue'
+export default defineComponent({
+  name: 'CustomInput',
+  props: {
+    modelValue: {
+      type: [String, Number],
+      default: ''
     },
-    emits: ['update:modelValue']
-  })
+    label: {
+      type: String,
+      required: true
+    }
+  },
+  emits: ['update:modelValue']
+})
 </script>
 
 <style>
-  .q-field--outlined .q-field__control:before {
-    border-color: #202225;
-  }
-  .q-field--outlined .q-field__control {
-    border-radius: 12px;
-  }
+.q-field--outlined .q-field__control:before {
+  border-color: #202225;
+}
+.q-field--outlined .q-field__control {
+  border-radius: 12px;
+}
 </style>

@@ -31,7 +31,7 @@
 
     <div class="text-caption text-center text-grey q-mt-md">
       Don't have an account?
-      <router-link to="/register" class="text-primary">Register</router-link>
+      <router-link to="/auth/register" class="text-primary">Register</router-link>
     </div>
   </q-card-section>
 </template>
@@ -41,7 +41,7 @@ import { ref } from 'vue'
 import CustomInput from 'src/components/Input.vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
-
+import axios from 'axios'
 const router = useRouter()
 
 defineOptions({
@@ -61,7 +61,22 @@ function validatePassword(password: string) {
   return password.length >= 8
 }
 
-const onLogin = () => {
-  router.push({ path: '/index' })
+const onLogin = async () => {
+  try {
+    const { data } = await axios.post('http://localhost:3333/auth/login', {
+      email: loginForm.value.email,
+      password: loginForm.value.password
+    })
+
+    // Store token if returned
+    if (data.token) {
+      localStorage.setItem('token', data.token)
+      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+    }
+
+    router.push({ path: '/index' })
+  } catch (e) {
+    console.error(e)
+  }
 }
 </script>

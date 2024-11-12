@@ -28,8 +28,8 @@
         v-model="registerForm.password"
         label="Password"
         :type="passwordVisibility ? 'password' : 'text'"
-        :rules="[(val: any) => !!val || 'Password is required', (val: any) => validatePassword(val) || 'Password must be at least 8 characters']"
-      >
+        :rules="[(val: any) => !!val || 'Password is required', (val: any) => validatePassword(val) || 'Password needs 8+ chars, 1 uppercase & 1 number']"
+        >,
         <template v-slot:append>
           <q-icon
             :name="passwordVisibility ? 'visibility_off' : 'visibility'"
@@ -42,7 +42,7 @@
         v-model="registerForm.passwordConfirm"
         label="Confirm Password"
         :type="passwordVisibility ? 'password' : 'text'"
-        :rules="[(val: any) => !!val || 'Password is required', (val: any) => validatePassword(val) || 'Password must be at least 8 characters', (val: any) => validatePasswordMatch(registerForm.password, val) || 'Passwords do not match']"
+        :rules="[(val: any) => !!val || 'Password is required', (val: any) => validatePassword(val) || 'Password needs 8+ chars, 1 uppercase & 1 number', (val: any) => validatePasswordMatch(registerForm.password, val) || 'Passwords do not match']"
       >
         <template v-slot:append>
           <q-icon
@@ -58,15 +58,16 @@
 
     <div class="text-caption text-center text-grey q-mt-md">
       Already have an account?
-      <router-link to="/login" class="text-primary">Login</router-link>
+      <router-link to="/auth/login" class="text-primary">Login</router-link>
     </div>
   </q-card-section>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import CustomInput from 'src/components/Input.vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -97,7 +98,19 @@ function validatePasswordMatch(password: string, passwordConfirm: string) {
   return password === passwordConfirm
 }
 
-const onRegister = () => {
-  router.push({ path: '/index' })
+const onRegister = async () => {
+  try {
+    await axios.post('http://localhost:3333/auth/register', {
+      fullName: `${registerForm.value.firstName} ${registerForm.value.lastName}`,
+      email: registerForm.value.email,
+      password: registerForm.value.password,
+      passwordConfirmation: registerForm.value.passwordConfirm
+    })
+
+    // Registration successful
+    router.push({ path: '/auth/login' })
+  } catch (e) {
+    console.error(e)
+  }
 }
 </script>
