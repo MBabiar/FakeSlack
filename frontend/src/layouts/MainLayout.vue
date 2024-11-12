@@ -320,8 +320,8 @@ const onLoad = (index: number, done: () => void) => {
   }, 1000)
 }
 
-const isHighlighted = (message: { text: string[] }) => {
-  return message.text.some((text: string) => text.includes(`@${identityStore.nickname}`))
+const isHighlighted = (message: { text?: string[] }) => {
+  return message.text?.some((text: string) => text.includes(`@${identityStore.nickname}`)) ?? false
 }
 
 const text = ref('')
