@@ -133,7 +133,13 @@
 
         <q-card-actions align="right">
           <q-btn label="No" color="primary" v-close-popup />
-          <q-btn flat label="Yes" color="primary" v-close-popup @click="leaveChannel" />
+          <q-btn
+            flat
+            label="Yes"
+            color="primary"
+            v-close-popup
+            @click="leaveChannel(leaveChannelId)"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -346,7 +352,90 @@ const commandFormatSelected = computed(() => {
   return commandFormats.find((command) => text.value.startsWith(command.name))?.format
 })
 
+interface ChatChannel {
+  id: number
+  name: string
+  private: boolean
+  new: boolean
+}
+
+const joinChannel = (channel: ChatChannel) => {
+  console.log(`Joining channel: ${channel}`)
+  // Add your join channel logic here
+}
+
+const leaveChannel = (channel: number) => {
+  console.log(`Leaving channel: ${channel}`)
+  channelsStore.channels = channelsStore.channels.filter(
+    (channel) => channel.id !== leaveChannelId.value
+  )
+  leaveChannelId.value = 0
+}
+
+const createChannelFunc = () => {
+  channelsStore.channels.push({
+    id: channelsStore.channels.length + 1,
+    name: channelName.value,
+    new: true,
+    private: false
+  })
+  channelName.value = ''
+}
+
+const closeChannel = () => {
+  channelsStore.channels = channelsStore.channels.filter(
+    (channel) => channel.id !== closeChannelId.value
+  )
+  closeChannelId.value = 0
+}
+
+const listChannels = () => {
+  console.log('Listing channels')
+  // Add your list channels logic here
+}
+
+const showHelp = () => {
+  console.log('Showing help')
+  // Add your help logic here
+}
+
+const handleCommand = () => {
+  const [command, ...args] = text.value.split(' ')
+  switch (command) {
+    case '/join':
+      const joinChan = channelsStore.channels.find((channel) => channel.name === args[0])
+      if (joinChan) {
+        joinChannel(joinChan)
+      } else {
+        console.log(`Channel ${args[0]} not found`)
+      }
+      break
+    case '/leave':
+      leaveChannel(leaveChannelId.value)
+      break
+    case '/create':
+      createChannelFunc()
+      break
+    case '/close':
+      closeChannel()
+      break
+    case '/list':
+      listChannels()
+      break
+    case '/help':
+      showHelp()
+      break
+    default:
+      console.log('Unknown command')
+  }
+}
+
 const sendMessage = function () {
+  if (isCommand.value) {
+    handleCommand()
+    return
+  }
+
   if (text.value) {
     // messagesStore.messages.value.push({
     //   name: 'Samuel Csető',
@@ -387,30 +476,6 @@ const shouldDisplayName = (index: number) => {
 
 const onLogout = () => {
   router.push({ path: '/login' })
-}
-
-const createChannelFunc = () => {
-  channelsStore.channels.push({
-    id: channelsStore.channels.length + 1,
-    name: channelName.value,
-    new: true,
-    private: false
-  })
-  channelName.value = ''
-}
-
-const leaveChannel = () => {
-  channelsStore.channels = channelsStore.channels.filter(
-    (channel) => channel.id !== leaveChannelId.value
-  )
-  leaveChannelId.value = 0
-}
-
-const closeChannel = () => {
-  channelsStore.channels = channelsStore.channels.filter(
-    (channel) => channel.id !== closeChannelId.value
-  )
-  closeChannelId.value = 0
 }
 
 onMounted(async () => {
