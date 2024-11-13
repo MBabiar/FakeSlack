@@ -284,8 +284,6 @@ const selectedChannelId = ref<number | null>(null)
 const selectChannel = async (channelId: number) => {
   selectedChannelId.value = channelId
   await messagesStore.fetchMessagesForChannel(channelId)
-  console.log('Selected channel:', channelId)
-  console.log('Messages:', messagesStore.messages[channelId])
 }
 
 defineOptions({
@@ -365,12 +363,14 @@ const joinChannel = (channel: ChatChannel) => {
   // Add your join channel logic here
 }
 
-const leaveChannel = (channel: number) => {
-  console.log(`Leaving channel: ${channel}`)
-  channelsStore.channels = channelsStore.channels.filter(
-    (channel) => channel.id !== leaveChannelId.value
-  )
+const leaveChannel = async (channel: number) => {
+  identityStore.leaveChannel(channel)
+  // channelsStore.channels = channelsStore.channels.filter(
+  //   (channel) => channel.id !== leaveChannelId.value
+  // )
   leaveChannelId.value = 0
+  await channelsStore.loadChannels()
+  selectChannel(channelsStore.channels[0].id)
 }
 
 const createChannelFunc = async () => {
@@ -425,6 +425,12 @@ const handleCommand = () => {
       }
       break
     case '/leave':
+      const leaveChan = channelsStore.channels.find((channel) => channel.name === args[0])
+      if (leaveChan) {
+        leaveChannelId.value = leaveChan.id
+      } else {
+        console.log(`Channel ${args[0]} not found`)
+      }
       leaveChannel(leaveChannelId.value)
       break
     case '/create':
@@ -457,7 +463,7 @@ const sendMessage = function () {
     }
 
     messagesStore.sendMessage(selectedChannelId.value, text.value)
-    messagesStore.fetchMessagesForChannel(selectedChannelId.value)
+    // messagesStore.fetchMessagesForChannel(selectedChannelId.value)
 
     const { isSupported, show } = useWebNotification({
       title: 'New message from Samuel Csető',

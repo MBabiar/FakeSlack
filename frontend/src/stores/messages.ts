@@ -21,9 +21,9 @@ export const useMessagesStore = defineStore('messages', () => {
     return new Promise<void>((resolve, reject) => {
       const socket = getSocket()
       if (socket) {
-        socket.on('messages', (receivedMessages) => {
-          console.log('Received messages:', receivedMessages)
+        socket.emit('joinChannel', { channelId })
 
+        socket.on('messages', (receivedMessages) => {
           // Extract name and text and assign to messages ref
           messages.value[channelId] = receivedMessages.map(
             (message: {
@@ -53,6 +53,28 @@ export const useMessagesStore = defineStore('messages', () => {
         console.error('Socket is not connected')
         reject('Socket is not connected')
       }
+
+      socket.on('newMessage', (newMessage) => {
+        console.log('New message received:', newMessage)
+
+        const message = {
+          id: newMessage.id,
+          channelId: newMessage.channelId,
+          userId: newMessage.author.id,
+          name: newMessage.author.nickname,
+          text: [newMessage.content],
+          createdAt: newMessage.createdAt,
+          me: newMessage.author.id === identityStore.id
+        }
+
+        console.log('Message:', message)
+
+        if (!messages.value[message.channelId]) {
+          messages.value[message.channelId] = []
+        }
+
+        messages.value[message.channelId].push(message)
+      })
     })
   }
 

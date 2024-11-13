@@ -84,5 +84,21 @@ export const useIdentityStore = defineStore('identity', () => {
     establishSocketConnection()
   }
 
-  return { id, firstName, lastName, email, nickname, register, login, token, checkLoggedIn, socket }
+  const leaveChannel = (id: number) => {
+    socket.value.emit('leaveChannel', { channelId: id })
+  }
+
+  return {
+    id,
+    firstName,
+    lastName,
+    email,
+    nickname,
+    register,
+    login,
+    token,
+    checkLoggedIn,
+    socket,
+    leaveChannel
+  }
 })
