@@ -56,5 +56,14 @@ export const useMessagesStore = defineStore('messages', () => {
     })
   }
 
-  return { messages, fetchMessagesForChannel }
+  const sendMessage = (channelId: number, text: string) => {
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('message', { channelId, text })
+    } else {
+      console.error('Socket is not connected')
+    }
+  }
+
+  return { messages, fetchMessagesForChannel, sendMessage }
 })

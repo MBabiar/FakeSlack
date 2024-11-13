@@ -451,11 +451,12 @@ const sendMessage = function () {
   }
 
   if (text.value) {
-    // messagesStore.messages.value.push({
-    //   name: 'Samuel Csető',
-    //   text: [text.value],
-    //   me: true
-    // })
+    if (selectedChannelId.value === null) {
+      console.error('No channel selected')
+      return
+    }
+
+    messagesStore.sendMessage(selectedChannelId.value, text.value)
 
     const { isSupported, show } = useWebNotification({
       title: 'New message from Samuel Csető',
