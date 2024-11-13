@@ -19,18 +19,29 @@ export const useMessagesStore = defineStore('messages', () => {
     return new Promise<void>((resolve, reject) => {
       const socket = getSocket()
       if (socket) {
-        socket.emit('getMessages', { channelId })
-
-        socket.on('messages', (receivedMessages: Message[]) => {
+        socket.on('messages', (receivedMessages) => {
           console.log('Received messages:', receivedMessages)
-          receivedMessages.forEach((message) => {
-            if (!messages.value[message.channelId]) {
-              messages.value[message.channelId] = []
-            }
-            messages.value[message.channelId].push(message)
-          })
-          // Ensure reactivity
-          messages.value = { ...messages.value }
+
+          // Extract name and text and assign to messages ref
+          messages.value[channelId] = receivedMessages.map(
+            (message: {
+              id: number
+              channelId: number
+              author: { id: number; nickname: string }
+              content: string
+              createdAt: string
+            }) => ({
+              id: message.id,
+              channelId: message.channelId,
+              name: message.author.nickname,
+              text: message.content
+            })
+          )
+
+          console.log('kkt:')
+          console.log('Messages:', messages.value)
+          console.log('kkt:')
+
           resolve()
         })
 
@@ -38,6 +49,8 @@ export const useMessagesStore = defineStore('messages', () => {
           console.error('Error:', errorMessage)
           reject(errorMessage)
         })
+
+        socket.emit('getMessages', { channelId })
       } else {
         console.error('Socket is not connected')
         reject('Socket is not connected')
