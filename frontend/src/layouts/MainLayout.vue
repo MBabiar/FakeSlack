@@ -272,6 +272,7 @@ import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
 import { useWebNotification } from '@vueuse/core'
 import { useMessagesStore } from 'src/stores/messages'
+import axios from 'axios'
 
 const router = useRouter()
 const channelsStore = useChannelsStore()
@@ -372,14 +373,27 @@ const leaveChannel = (channel: number) => {
   leaveChannelId.value = 0
 }
 
-const createChannelFunc = () => {
-  channelsStore.channels.push({
-    id: channelsStore.channels.length + 1,
-    name: channelName.value,
-    new: true,
-    private: false
-  })
-  channelName.value = ''
+const createChannelFunc = async () => {
+  try {
+    const token = useIdentityStore().token
+    console.log('Token:', token)
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    const response = await axios.post('http://localhost:3333/channels', {
+      name: channelName.value
+    })
+
+    if (response.status === 201) {
+      channelsStore.channels.push({
+        id: response.data.id,
+        name: channelName.value,
+        new: true,
+        private: false
+      })
+      channelName.value = ''
+    }
+  } catch (error) {
+    console.error('Error creating channel:', error)
+  }
 }
 
 const closeChannel = () => {
