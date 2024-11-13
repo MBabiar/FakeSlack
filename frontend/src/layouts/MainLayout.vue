@@ -488,6 +488,11 @@ const shouldDisplayName = (index: number) => {
   )
 }
 
+onMounted(() => {
+  // load channels
+  channelsStore.loadChannels()
+})
+
 const onLogout = () => {
   router.push({ path: '/login' })
 }

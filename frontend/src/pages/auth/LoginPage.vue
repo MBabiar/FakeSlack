@@ -37,13 +37,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import CustomInput from 'src/components/Input.vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
 import { useIdentityStore } from 'src/stores/identity-store'
 
-const indentifyStore = useIdentityStore()
+const identityStore = useIdentityStore()
 const router = useRouter()
 
 defineOptions({
@@ -64,7 +64,14 @@ function validatePassword(password: string) {
 }
 
 const onLogin = async () => {
-  await indentifyStore.login(loginForm.value)
+  await identityStore.login(loginForm.value)
   router.push({ path: '/index' })
 }
+
+onMounted(async () => {
+  await identityStore.checkLoggedIn()
+  if (identityStore.token) {
+    router.push({ path: '/index' })
+  }
+})
 </script>

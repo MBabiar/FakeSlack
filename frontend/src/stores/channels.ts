@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { useIdentityStore } from './identity-store'
 import { connectSocket } from 'src/stores/socket'
 
 interface Channel {
@@ -10,7 +11,31 @@ interface Channel {
 }
 
 export const useChannelsStore = defineStore('channels', () => {
+  const identityStore = useIdentityStore()
+  const loading = ref(false)
+
   const channels = ref<Channel[]>([])
+
+  const loadChannelss = () => {
+    loading.value = true
+    console.log('Fetching channels...')
+    identityStore.socket.emit('getChannels')
+
+    identityStore.socket.on('channels', (data: unknown) => {
+      console.log('Got channels:', data)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const channelsMapped = (data as any[]).map((channel) => {
+        return {
+          id: channel.id,
+          name: channel.name,
+          private: channel.private,
+          new: false
+        }
+      })
+      channels.value = channelsMapped
+      loading.value = false
+    })
+  }
 
   const loadChannels = () => {
     return new Promise<void>((resolve, reject) => {
@@ -42,5 +67,10 @@ export const useChannelsStore = defineStore('channels', () => {
     })
   }
 
-  return { channels, loadChannels }
+  return {
+    loading,
+    channels,
+    loadChannels,
+    loadChannelss
+  }
 })
