@@ -457,6 +457,7 @@ const sendMessage = function () {
     }
 
     messagesStore.sendMessage(selectedChannelId.value, text.value)
+    messagesStore.fetchMessagesForChannel(selectedChannelId.value)
 
     const { isSupported, show } = useWebNotification({
       title: 'New message from Samuel Csető',
