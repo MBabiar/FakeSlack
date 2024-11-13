@@ -330,11 +330,6 @@ const isHighlighted = (message: { text: string[] }) => {
   })
 }
 
-// const isHighlighted = (message) => {
-//   message.text = Array.isArray(message.text) ? message.text : [message.text]
-//   return false
-// }
-
 const text = ref('')
 const isCommand = computed(() => {
   return text.value.startsWith('/')
@@ -385,8 +380,8 @@ const shouldDisplayName = (index: number) => {
   if (index === 0) return true
   if (selectedChannelId.value === null) return false
   return (
-    messagesStore.messages[selectedChannelId.value][index].userId !==
-    messagesStore.messages[selectedChannelId.value][index - 1].userId
+    messagesStore.messages[selectedChannelId.value][index].name !==
+    messagesStore.messages[selectedChannelId.value][index - 1].name
   )
 }
 

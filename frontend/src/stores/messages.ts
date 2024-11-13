@@ -40,11 +40,6 @@ export const useMessagesStore = defineStore('messages', () => {
               me: message.author.id === identityStore.id
             })
           )
-
-          console.log('kkt:')
-          console.log('Messages:', messages.value)
-          console.log('kkt:')
-
           resolve()
         })
 
