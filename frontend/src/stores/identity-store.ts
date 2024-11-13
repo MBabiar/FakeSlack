@@ -20,14 +20,14 @@ export const useIdentityStore = defineStore('identity', () => {
     })
 
     if (response.data.token) {
-      localStorage.setItem('token', response.data.token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+      localStorage.setItem('token', response.data.token.token)
       token.value = response.data.token
       id.value = response.data.user.id
       firstName.value = response.data.user.firstName
       lastName.value = response.data.user.lastName
       email.value = response.data.user.email
       nickname.value = response.data.user.nickname
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       establishSocketConnection()
     }
   }
@@ -69,7 +69,9 @@ export const useIdentityStore = defineStore('identity', () => {
       return
     }
 
-    axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
+    token.value = storedToken
+
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
 
     const response = await axios.get('http://localhost:3333/auth/me')
 
@@ -78,7 +80,6 @@ export const useIdentityStore = defineStore('identity', () => {
     lastName.value = response.data.lastName
     email.value = response.data.email
     nickname.value = response.data.nickname
-    token.value = storedToken
 
     establishSocketConnection()
   }
