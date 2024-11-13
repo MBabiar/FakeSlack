@@ -320,20 +320,20 @@ const onLoad = (index: number, done: () => void) => {
   }, 1000)
 }
 
-// const isHighlighted = (message: { text: string[] }) => {
-//   const textArray = Array.isArray(message.text) ? message.text : [message.text]
-//   return textArray.some((text) => {
-//     return (
-//       text.includes(`@${identityStore.nickname}`) ||
-//       text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
-//     )
-//   })
-// }
-
-const isHighlighted = (message) => {
-  message.text = Array.isArray(message.text) ? message.text : [message.text]
-  return false
+const isHighlighted = (message: { text: string[] }) => {
+  const textArray = Array.isArray(message.text) ? message.text : [message.text]
+  return textArray.some((text) => {
+    return (
+      text.includes(`@${identityStore.nickname}`) ||
+      text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
+    )
+  })
 }
+
+// const isHighlighted = (message) => {
+//   message.text = Array.isArray(message.text) ? message.text : [message.text]
+//   return false
+// }
 
 const text = ref('')
 const isCommand = computed(() => {

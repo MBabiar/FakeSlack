@@ -2,15 +2,15 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { connectSocket } from 'src/stores/socket'
 
+interface Channel {
+  id: number
+  name: string
+  private: boolean
+  new: boolean
+}
+
 export const useChannelsStore = defineStore('channels', () => {
-  const channels = ref([
-    {
-      id: 10,
-      name: 'Foodies United',
-      private: false,
-      new: false
-    }
-  ])
+  const channels = ref<Channel[]>([])
 
   const loadChannels = () => {
     return new Promise<void>((resolve, reject) => {
@@ -20,7 +20,6 @@ export const useChannelsStore = defineStore('channels', () => {
         reject('Socket is not connected')
         return
       }
-      socket.emit('getChannels')
 
       // Listen for the channels event
       socket.on('channels', (receivedChannels) => {
@@ -28,14 +27,7 @@ export const useChannelsStore = defineStore('channels', () => {
         if (receivedChannels) {
           channels.value = receivedChannels
         } else {
-          channels.value = [
-            {
-              id: 10,
-              name: 'Foodies United',
-              private: false,
-              new: false
-            }
-          ]
+          channels.value = []
         }
         resolve()
       })
@@ -45,6 +37,8 @@ export const useChannelsStore = defineStore('channels', () => {
         console.error('Error:', errorMessage)
         reject(errorMessage)
       })
+
+      socket.emit('getChannels')
     })
   }
 

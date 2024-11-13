@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getSocket } from 'src/stores/socket'
+import { useIdentityStore } from './identity-store'
 
 interface Message {
   id: number
@@ -14,6 +15,7 @@ interface Message {
 
 export const useMessagesStore = defineStore('messages', () => {
   const messages = ref<{ [channelId: number]: Message[] }>({})
+  const identityStore = useIdentityStore()
 
   const fetchMessagesForChannel = (channelId: number) => {
     return new Promise<void>((resolve, reject) => {
@@ -34,7 +36,8 @@ export const useMessagesStore = defineStore('messages', () => {
               id: message.id,
               channelId: message.channelId,
               name: message.author.nickname,
-              text: message.content
+              text: [message.content],
+              me: message.author.id === identityStore.id
             })
           )
 
