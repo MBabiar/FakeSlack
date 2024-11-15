@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { getSocket } from 'src/stores/socket'
 import { useIdentityStore } from './identity-store'
 
 interface Message {
@@ -16,14 +15,15 @@ interface Message {
 export const useMessagesStore = defineStore('messages', () => {
   const messages = ref<{ [channelId: number]: Message[] }>({})
   const identityStore = useIdentityStore()
+  const socket = identityStore.socket
 
   const fetchMessagesForChannel = (channelId: number) => {
     return new Promise<void>((resolve, reject) => {
-      const socket = getSocket()
       if (socket) {
         socket.emit('joinChannel', { channelId })
 
-        socket.on('messages', (receivedMessages) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        socket.on('messages', (receivedMessages: any) => {
           // Extract name and text and assign to messages ref
           messages.value[channelId] = receivedMessages.map(
             (message: {
@@ -54,32 +54,27 @@ export const useMessagesStore = defineStore('messages', () => {
         reject('Socket is not connected')
       }
 
-      socket.on('newMessage', (newMessage) => {
-        console.log('New message received:', newMessage)
-
-        const message = {
-          id: newMessage.id,
-          channelId: newMessage.channelId,
-          userId: newMessage.author.id,
-          name: newMessage.author.nickname,
-          text: [newMessage.content],
-          createdAt: newMessage.createdAt,
-          me: newMessage.author.id === identityStore.id
-        }
-
-        console.log('Message:', message)
-
-        if (!messages.value[message.channelId]) {
-          messages.value[message.channelId] = []
-        }
-
-        messages.value[message.channelId].push(message)
-      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  socket.on('newMessage', (newMessage: any) => {
+    console.log('New message:', newMessage)
+    const message = {
+      id: newMessage.id,
+      channelId: newMessage.channelId,
+      userId: newMessage.author.id,
+      name: newMessage.author.nickname,
+      text: [newMessage.content],
+      createdAt: newMessage.createdAt,
+      me: newMessage.author.id === identityStore.id
+    }
+
+    messages.value[message.channelId].push(message)
+  })
+
   const sendMessage = (channelId: number, text: string) => {
-    const socket = getSocket()
     if (socket) {
       socket.emit('message', { channelId, text })
     } else {

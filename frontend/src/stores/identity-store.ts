@@ -21,7 +21,7 @@ export const useIdentityStore = defineStore('identity', () => {
 
     if (response.data.token) {
       localStorage.setItem('token', response.data.token.token)
-      token.value = response.data.token
+      token.value = response.data.token.token
       id.value = response.data.user.id
       firstName.value = response.data.user.firstName
       lastName.value = response.data.user.lastName
@@ -84,6 +84,17 @@ export const useIdentityStore = defineStore('identity', () => {
     establishSocketConnection()
   }
 
+  const logout = async () => {
+    id.value = null
+    firstName.value = null
+    lastName.value = null
+    email.value = null
+    nickname.value = null
+    token.value = null
+    socket.value.disconnect()
+    localStorage.removeItem('token')
+  }
+
   const leaveChannel = (id: number) => {
     socket.value.emit('leaveChannel', { channelId: id })
   }
@@ -99,6 +110,7 @@ export const useIdentityStore = defineStore('identity', () => {
     token,
     checkLoggedIn,
     socket,
-    leaveChannel
+    leaveChannel,
+    logout
   }
 })

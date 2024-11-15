@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
-import { connectSocket } from 'src/stores/socket'
 
 interface Channel {
   id: number
@@ -40,14 +39,11 @@ export const useChannelsStore = defineStore('channels', () => {
   const loadChannels = () => {
     return new Promise<void>((resolve, reject) => {
       // Fetch channels from the server
-      const socket = connectSocket()
-      if (!socket) {
-        reject('Socket is not connected')
-        return
-      }
+      const socket = identityStore.socket
 
       // Listen for the channels event
-      socket.on('channels', (receivedChannels) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      socket.on('channels', (receivedChannels: any) => {
         // Update the channels ref
         if (receivedChannels) {
           channels.value = receivedChannels
@@ -58,7 +54,8 @@ export const useChannelsStore = defineStore('channels', () => {
       })
 
       // Listen for error event
-      socket.on('error', (errorMessage) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      socket.on('error', (errorMessage: any) => {
         console.error('Error:', errorMessage)
         reject(errorMessage)
       })

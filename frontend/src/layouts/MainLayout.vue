@@ -343,6 +343,7 @@ const commandFormats = [
   { name: '/join', format: '/join <channel>' },
   { name: '/leave', format: '/leave <channel>' },
   { name: '/create', format: '/create <channel>' },
+  { name: '/invite', format: '/invite <user>' },
   { name: '/close', format: '/close <channel>' },
   { name: '/list', format: '/list' },
   { name: '/help', format: '/help' }
@@ -351,23 +352,26 @@ const commandFormatSelected = computed(() => {
   return commandFormats.find((command) => text.value.startsWith(command.name))?.format
 })
 
-interface ChatChannel {
-  id: number
-  name: string
-  private: boolean
-  new: boolean
-}
+const joinChannel = async (name: string, privateBool: boolean) => {
+  console.log(`Joining channel: ${name}`)
 
-const joinChannel = (channel: ChatChannel) => {
-  console.log(`Joining channel: ${channel}`)
-  // Add your join channel logic here
+  try {
+    const response = await axios.post('http://localhost:3333/channel/join', {
+      channelName: name,
+      privateBool: privateBool
+    })
+
+    if (response.status === 200) {
+      console.log('Joined channel:', name)
+    }
+  } catch (error) {
+    console.error('Error joining channel:', error)
+  }
+  channelsStore.loadChannels()
 }
 
 const leaveChannel = async (channel: number) => {
   identityStore.leaveChannel(channel)
-  // channelsStore.channels = channelsStore.channels.filter(
-  //   (channel) => channel.id !== leaveChannelId.value
-  // )
   leaveChannelId.value = 0
   await channelsStore.loadChannels()
   selectChannel(channelsStore.channels[0].id)
@@ -375,9 +379,6 @@ const leaveChannel = async (channel: number) => {
 
 const createChannelFunc = async () => {
   try {
-    const token = useIdentityStore().token
-    console.log('Token:', token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     const response = await axios.post('http://localhost:3333/channels', {
       name: channelName.value
     })
@@ -393,6 +394,22 @@ const createChannelFunc = async () => {
     }
   } catch (error) {
     console.error('Error creating channel:', error)
+  }
+}
+
+const inviteUser = async (userNickname: string) => {
+  console.log('Inviting user')
+  try {
+    const response = await axios.post('http://localhost:3333/channel/invite', {
+      channelId: selectedChannelId.value,
+      userNickname: userNickname
+    })
+
+    if (response.status === 200) {
+      console.log('User invited')
+    }
+  } catch (error) {
+    console.error('Error inviting user:', error)
   }
 }
 
@@ -417,12 +434,10 @@ const handleCommand = () => {
   const [command, ...args] = text.value.split(' ')
   switch (command) {
     case '/join':
-      const joinChan = channelsStore.channels.find((channel) => channel.name === args[0])
-      if (joinChan) {
-        joinChannel(joinChan)
-      } else {
-        console.log(`Channel ${args[0]} not found`)
-      }
+      const name = args[0]
+      const privateBool = Number(args[1]) === 1 ? true : false
+      joinChannel(name, privateBool)
+
       break
     case '/leave':
       const leaveChan = channelsStore.channels.find((channel) => channel.name === args[0])
@@ -435,6 +450,10 @@ const handleCommand = () => {
       break
     case '/create':
       createChannelFunc()
+      break
+    case '/invite':
+      const userNickname = args[0]
+      inviteUser(userNickname)
       break
     case '/close':
       closeChannel()
@@ -463,7 +482,6 @@ const sendMessage = function () {
     }
 
     messagesStore.sendMessage(selectedChannelId.value, text.value)
-    // messagesStore.fetchMessagesForChannel(selectedChannelId.value)
 
     const { isSupported, show } = useWebNotification({
       title: 'New message from Samuel Csető',
@@ -496,13 +514,9 @@ const shouldDisplayName = (index: number) => {
   )
 }
 
-onMounted(() => {
-  // load channels
-  channelsStore.loadChannels()
-})
-
-const onLogout = () => {
-  router.push({ path: '/login' })
+const onLogout = async () => {
+  await identityStore.logout()
+  router.push({ path: '/auth/login' })
 }
 
 onMounted(async () => {
