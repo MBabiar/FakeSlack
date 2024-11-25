@@ -42,6 +42,7 @@ import CustomInput from 'src/components/Input.vue'
 import { useRouter } from 'vue-router'
 import validator from 'validator'
 import { useIdentityStore } from 'src/stores/identity-store'
+import { Notify } from 'quasar'
 
 const identityStore = useIdentityStore()
 const router = useRouter()
@@ -64,8 +65,17 @@ function validatePassword(password: string) {
 }
 
 const onLogin = async () => {
-  await identityStore.login(loginForm.value)
-  router.push({ path: '/index' })
+  try {
+    await identityStore.login(loginForm.value)
+    router.push({ path: '/index' })
+  } catch (error) {
+    const err = error as { response: { data: { errors: Array<{ message: string }> } } }
+    Notify.create({
+      message: err.response.data.errors[0].message,
+      color: 'negative',
+      position: 'top'
+    })
+  }
 }
 
 onMounted(async () => {

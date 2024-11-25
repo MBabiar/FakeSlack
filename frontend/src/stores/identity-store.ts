@@ -2,6 +2,7 @@ import axios from 'axios'
 import { defineStore } from 'pinia'
 import { io } from 'socket.io-client'
 import { ref } from 'vue'
+import { Notify } from 'quasar'
 
 export const useIdentityStore = defineStore('identity', () => {
   const id = ref()
@@ -29,6 +30,12 @@ export const useIdentityStore = defineStore('identity', () => {
       nickname.value = response.data.user.nickname
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       establishSocketConnection()
+
+      Notify.create({
+        type: 'positive',
+        message: 'Successfully logged in',
+        position: 'top'
+      })
     }
   }
 
@@ -54,6 +61,12 @@ export const useIdentityStore = defineStore('identity', () => {
     lastName.value = response.data.lastName
     email.value = response.data.email
     nickname.value = response.data.nickname
+
+    Notify.create({
+      type: 'positive',
+      message: 'Successfully registered',
+      position: 'top'
+    })
   }
 
   const establishSocketConnection = () => {

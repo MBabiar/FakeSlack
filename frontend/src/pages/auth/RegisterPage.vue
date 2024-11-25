@@ -75,6 +75,7 @@ import CustomInput from 'src/components/Input.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
+import { Notify } from 'quasar'
 
 const identityStore = useIdentityStore()
 
@@ -109,14 +110,24 @@ function validatePasswordMatch(password: string, passwordConfirm: string) {
 }
 
 const onRegister = async () => {
-  await identityStore.register({
-    firstName: registerForm.value.firstName,
-    lastName: registerForm.value.lastName,
-    email: registerForm.value.email,
-    nickname: registerForm.value.nickname,
-    password: registerForm.value.password,
-    passwordConfirmation: registerForm.value.passwordConfirm
-  })
-  router.push({ path: '/auth/login' })
+  try {
+    await identityStore.register({
+      firstName: registerForm.value.firstName,
+      lastName: registerForm.value.lastName,
+      email: registerForm.value.email,
+      nickname: registerForm.value.nickname,
+      password: registerForm.value.password,
+      passwordConfirmation: registerForm.value.passwordConfirm
+    })
+
+    router.push({ path: '/auth/login' })
+  } catch (error) {
+    const err = error as { response: { data: { errors: Array<{ message: string }> } } }
+    Notify.create({
+      message: err.response.data.errors[0].message,
+      color: 'negative',
+      position: 'top'
+    })
+  }
 }
 </script>
