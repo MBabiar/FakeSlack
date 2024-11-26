@@ -7,20 +7,20 @@ const routes: RouteRecordRaw[] = [
     redirect: () => ({ name: 'login' })
   },
 
-  // Auth routes 
+  // Auth routes
   {
     path: '/auth',
     component: () => import('layouts/AuthLayout.vue'),
     meta: { guestOnly: true },
     children: [
-      { 
-        path: 'register', 
-        name: 'register', 
+      {
+        path: 'register',
+        name: 'register',
         component: () => import('pages/auth/RegisterPage.vue')
       },
-      { 
-        path: 'login', 
-        name: 'login', 
+      {
+        path: 'login',
+        name: 'login',
         component: () => import('pages/auth/LoginPage.vue')
       }
     ]
@@ -31,11 +31,13 @@ const routes: RouteRecordRaw[] = [
     path: '/index',
     meta: { requiresAuth: true },
     component: () => import('layouts/MainLayout.vue'),
-    children: [{ 
-      path: '',
-      name: 'index', 
-      component: () => import('pages/IndexPage.vue') 
-    }]
+    children: [
+      {
+        path: '',
+        name: 'index',
+        component: () => import('pages/ChatPage.vue')
+      }
+    ]
   },
 
   {

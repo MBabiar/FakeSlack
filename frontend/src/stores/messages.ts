@@ -53,8 +53,6 @@ export const useMessagesStore = defineStore('messages', () => {
         console.error('Socket is not connected')
         reject('Socket is not connected')
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     })
   }
 

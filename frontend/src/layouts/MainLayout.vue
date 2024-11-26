@@ -60,7 +60,7 @@
           color="primary"
           label="Create a channel"
           style="margin: 1em"
-          @click="createChannel = true"
+          @click="createChannelBool = true"
         />
         <q-separator />
         <div style="display: flex; padding: 1em; align-items: center">
@@ -170,7 +170,7 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="createChannel" persistent>
+    <q-dialog v-model="createChannelBool" persistent>
       <q-card>
         <q-card-section class="row items-center">
           <q-input
@@ -185,130 +185,71 @@
 
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn label="Create" color="primary" v-close-popup @click="createChannelFunc" />
+          <q-btn label="Create" color="primary" v-close-popup @click="createChannel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <q-page-container style="height: 100vh; display: flex; flex-direction: column">
-      <q-header elevated>
-        <q-toolbar>
-          <q-btn
-            flat
-            dense
-            round
-            icon="menu"
-            aria-label="Menu"
-            class="lt-md"
-            @click="toggleLeftDrawer"
-          />
-          <q-toolbar-title> FakeSlack </q-toolbar-title>
-        </q-toolbar>
-      </q-header>
+    <!-- App Header -->
+    <q-header elevated>
+      <q-toolbar>
+        <q-btn
+          flat
+          dense
+          round
+          icon="menu"
+          aria-label="Menu"
+          class="lt-md"
+          @click="toggleLeftDrawer"
+        />
+        <q-toolbar-title> FakeSlack </q-toolbar-title>
+      </q-toolbar>
+    </q-header>
 
-      <div class="scroll-y" style="padding: 0em 1em" ref="chatContainer">
-        <q-infinite-scroll @load="onLoad" reverse>
-          <template v-slot:loading>
-            <div class="row justify-center q-my-md">
-              <q-spinner color="primary" name="dots" size="40px" />
-            </div>
-          </template>
-
-          <div
-            v-if="
-              selectedChannelId !== null &&
-              messagesStore.messages[selectedChannelId] &&
-              messagesStore.messages[selectedChannelId].length > 0
-            "
-          >
-            <div
-              v-for="(message, index) in messagesStore.messages[selectedChannelId]"
-              :key="index"
-              :class="{ highlighted: message && isHighlighted(message) }"
-              class="q-px-sm"
-            >
-              <q-chat-message
-                v-if="shouldDisplayName(index)"
-                :name="message.name"
-                :text="message.text"
-                :sent="message.me"
-                class="first-message"
-              />
-              <q-chat-message
-                v-else
-                :name="''"
-                :text="message.text"
-                :sent="message.me"
-                class="next-message"
-              />
-            </div>
-          </div>
-        </q-infinite-scroll>
-      </div>
-      <div style="margin-top: 0">
-        <q-input outlined v-model="text" label="Message or Command (/)" @keyup.enter="sendMessage">
-          <q-tooltip v-model="isCommand"
-            ><div v-if="!commandFormatSelected">
-              Command Detected: Enter command to see arguments format
-            </div>
-            {{ commandFormatSelected }}</q-tooltip
-          ></q-input
-        >
-        <div style="padding: 0.3em 1em">
-          <q-badge
-            >Ed and Joanne is typing...
-            <q-tooltip>Ed: Aho<br />Joanne: sranda to bo</q-tooltip></q-badge
-          >
-        </div>
-      </div>
-    </q-page-container>
+    <!-- Chat Window -->
+    <router-view />
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
-import { useWebNotification } from '@vueuse/core'
 import { useMessagesStore } from 'src/stores/messages'
 import axios from 'axios'
+import { storeToRefs } from 'pinia'
 
+// Router
 const router = useRouter()
+
+// Stores
 const channelsStore = useChannelsStore()
 const identityStore = useIdentityStore()
 const messagesStore = useMessagesStore()
-const isLoading = ref(true)
 
-const selectedChannelId = ref<number | null>(null)
+// Variables
+const channelName = ref('')
+const closeChannelId = ref(0)
+const confirmCloseChannel = ref(false)
+const confirmLeaveChannel = ref(false)
+const confirmLogout = ref(false)
+const createChannelBool = ref(false)
+const isLoading = ref(true)
+const leaveChannelId = ref(0)
+const leftDrawerOpen = ref(false)
+const notificationsEnabled = ref(true)
+const { selectedChannelId } = storeToRefs(channelsStore)
+const state = ref('online')
+
 const selectChannel = async (channelId: number) => {
   selectedChannelId.value = channelId
   await messagesStore.fetchMessagesForChannel(channelId)
 }
 
-defineOptions({
-  name: 'MainLayout'
-})
-
-const leftDrawerOpen = ref(false)
-
-function toggleLeftDrawer() {
+const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
-
-const confirmLogout = ref(false)
-const confirmLeaveChannel = ref(false)
-const confirmCloseChannel = ref(false)
-const createChannel = ref(false)
-
-const leaveChannelId = ref(0)
-const closeChannelId = ref(0)
-
-const channelName = ref('')
-const chatContainer = useTemplateRef('chatContainer')
-const state = ref('online')
-
-const notificationsEnabled = ref(true)
 
 const toggleNotifications = () => {
   notificationsEnabled.value = !notificationsEnabled.value
@@ -318,58 +259,6 @@ const switchState = function (newState: string) {
   state.value = newState
 }
 
-const onLoad = (index: number, done: () => void) => {
-  setTimeout(() => {
-    console.log('Loading more messages')
-    done()
-  }, 1000)
-}
-
-const isHighlighted = (message: { text: string[] }) => {
-  const textArray = Array.isArray(message.text) ? message.text : [message.text]
-  return textArray.some((text) => {
-    return (
-      text.includes(`@${identityStore.nickname}`) ||
-      text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
-    )
-  })
-}
-
-const text = ref('')
-const isCommand = computed(() => {
-  return text.value.startsWith('/')
-})
-const commandFormats = [
-  { name: '/join', format: '/join <channel>' },
-  { name: '/leave', format: '/leave <channel>' },
-  { name: '/create', format: '/create <channel>' },
-  { name: '/invite', format: '/invite <user>' },
-  { name: '/close', format: '/close <channel>' },
-  { name: '/list', format: '/list' },
-  { name: '/help', format: '/help' }
-]
-const commandFormatSelected = computed(() => {
-  return commandFormats.find((command) => text.value.startsWith(command.name))?.format
-})
-
-const joinChannel = async (name: string, privateBool: boolean) => {
-  console.log(`Joining channel: ${name}`)
-
-  try {
-    const response = await axios.post('http://localhost:3333/channel/join', {
-      channelName: name,
-      privateBool: privateBool
-    })
-
-    if (response.status === 200) {
-      console.log('Joined channel:', name)
-    }
-  } catch (error) {
-    console.error('Error joining channel:', error)
-  }
-  channelsStore.loadChannels()
-}
-
 const leaveChannel = async (channel: number) => {
   identityStore.leaveChannel(channel)
   leaveChannelId.value = 0
@@ -377,7 +266,7 @@ const leaveChannel = async (channel: number) => {
   selectChannel(channelsStore.channels[0].id)
 }
 
-const createChannelFunc = async () => {
+const createChannel = async () => {
   try {
     const response = await axios.post('http://localhost:3333/channels', {
       name: channelName.value
@@ -397,22 +286,6 @@ const createChannelFunc = async () => {
   }
 }
 
-const inviteUser = async (userNickname: string) => {
-  console.log('Inviting user')
-  try {
-    const response = await axios.post('http://localhost:3333/channel/invite', {
-      channelId: selectedChannelId.value,
-      userNickname: userNickname
-    })
-
-    if (response.status === 200) {
-      console.log('User invited')
-    }
-  } catch (error) {
-    console.error('Error inviting user:', error)
-  }
-}
-
 const closeChannel = () => {
   channelsStore.channels = channelsStore.channels.filter(
     (channel) => channel.id !== closeChannelId.value
@@ -420,104 +293,13 @@ const closeChannel = () => {
   closeChannelId.value = 0
 }
 
-const listChannels = () => {
-  console.log('Listing channels')
-  // Add your list channels logic here
-}
-
-const showHelp = () => {
-  console.log('Showing help')
-  // Add your help logic here
-}
-
-const handleCommand = () => {
-  const [command, ...args] = text.value.split(' ')
-  switch (command) {
-    case '/join':
-      const name = args[0]
-      const privateBool = Number(args[1]) === 1 ? true : false
-      joinChannel(name, privateBool)
-
-      break
-    case '/leave':
-      const leaveChan = channelsStore.channels.find((channel) => channel.name === args[0])
-      if (leaveChan) {
-        leaveChannelId.value = leaveChan.id
-      } else {
-        console.log(`Channel ${args[0]} not found`)
-      }
-      leaveChannel(leaveChannelId.value)
-      break
-    case '/create':
-      createChannelFunc()
-      break
-    case '/invite':
-      const userNickname = args[0]
-      inviteUser(userNickname)
-      break
-    case '/close':
-      closeChannel()
-      break
-    case '/list':
-      listChannels()
-      break
-    case '/help':
-      showHelp()
-      break
-    default:
-      console.log('Unknown command')
-  }
-}
-
-const sendMessage = function () {
-  if (isCommand.value) {
-    handleCommand()
-    return
-  }
-
-  if (text.value) {
-    if (selectedChannelId.value === null) {
-      console.error('No channel selected')
-      return
-    }
-
-    messagesStore.sendMessage(selectedChannelId.value, text.value)
-
-    const { isSupported, show } = useWebNotification({
-      title: 'New message from Samuel Csető',
-      dir: 'auto',
-      lang: 'en',
-      renotify: true,
-      tag: 'test',
-      body: text.value
-    })
-
-    if (isSupported.value && notificationsEnabled.value) {
-      console.log('Notification shown')
-      show()
-    }
-
-    text.value = ''
-    // scroll to bottom
-    setTimeout(() => {
-      chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight
-    }, 10)
-  }
-}
-
-const shouldDisplayName = (index: number) => {
-  if (index === 0) return true
-  if (selectedChannelId.value === null) return false
-  return (
-    messagesStore.messages[selectedChannelId.value][index].name !==
-    messagesStore.messages[selectedChannelId.value][index - 1].name
-  )
-}
-
 const onLogout = async () => {
   await identityStore.logout()
   router.push({ path: '/auth/login' })
 }
+defineOptions({
+  name: 'MainLayout'
+})
 
 onMounted(async () => {
   try {
