@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useIdentityStore } from './identity-store'
+import { useMessagesStore } from './messages'
+import { useSocketStore } from './socket'
 
 interface Channel {
   id: number
@@ -10,42 +11,55 @@ interface Channel {
 }
 
 export const useChannelsStore = defineStore('channels', () => {
-  const identityStore = useIdentityStore()
-  const loading = ref(false)
-  const socket = identityStore.socket
+  const messagesStore = useMessagesStore()
+  const socketStore = useSocketStore()
 
+  const loadingChannels = ref(false)
   const channels = ref<Channel[]>([])
   const selectedChannelId = ref<number | null>(null)
 
-  const loadChannels = () => {
-    return new Promise<void>((resolve, reject) => {
-      // Listen for the channels event
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      socket.on('channels', (receivedChannels: any) => {
-        // Update the channels ref
-        if (receivedChannels) {
-          channels.value = receivedChannels
-        } else {
-          channels.value = []
-        }
-        resolve()
-      })
+  const selectChannel = async (channelId: number) => {
+    messagesStore.pagination.page = 0
+    messagesStore.messages = []
+    // await joinChannel(channelId)
+    await messagesStore.fetchMessagesForChannel(channelId)
+    selectedChannelId.value = channelId
+  }
 
-      // Listen for error event
+  // const joinChannel = (channelId: number) => {
+  //   return new Promise<void>((resolve, reject) => {
+  //     if (socketStore.socket) {
+  //       socketStore.socket.emit('joinChannel', { channelId })
+  //       resolve()
+  //     } else {
+  //       console.error('Socket is not connected')
+  //       reject('Socket is not connected')
+  //     }
+  //   })
+  // }
+
+  const loadChannels = () => {
+    return new Promise<void>(async (resolve, reject) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      socket.on('error', (errorMessage: any) => {
+      socketStore.socket.on('error', (errorMessage: any) => {
         console.error('Error:', errorMessage)
         reject(errorMessage)
       })
 
-      socket.emit('getChannels')
+      loadingChannels.value = true
+      socketStore.socket.emit('getChannels')
+      while (loadingChannels.value) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      resolve()
     })
   }
 
   return {
-    loading,
     channels,
+    selectedChannelId,
+    loadingChannels,
     loadChannels,
-    selectedChannelId
+    selectChannel
   }
 })

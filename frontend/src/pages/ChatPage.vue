@@ -1,7 +1,13 @@
 <template>
-  <q-page-container style="height: 100vh; display: flex; flex-direction: column">
+  <q-page-container class="chat-container">
     <div class="scroll-y" style="padding: 0em 1em" ref="chatContainer">
-      <q-infinite-scroll @load="loadMoreMessages" reverse>
+      <!-- TODO: finish infinite scroll heigh (grid)-->
+      <q-infinite-scroll
+        @load="loadMoreMessages"
+        reverse
+        ref="infiniteScroll"
+        style="height: calc(100vh - 150px)"
+      >
         <template v-slot:loading>
           <div class="row justify-center q-my-md">
             <q-spinner color="primary" name="dots" size="40px" />
@@ -11,12 +17,12 @@
         <div
           v-if="
             selectedChannelId !== null &&
-            messagesStore.messages[selectedChannelId] &&
-            messagesStore.messages[selectedChannelId].length > 0
+            messagesStore.messages &&
+            messagesStore.messages.length > 0
           "
         >
           <div
-            v-for="(message, index) in messagesStore.messages[selectedChannelId]"
+            v-for="(message, index) in messagesStore.messages"
             :key="index"
             :class="{ highlighted: message && isMessageHighlighted(message) }"
             class="q-px-sm"
@@ -39,15 +45,21 @@
         </div>
       </q-infinite-scroll>
     </div>
-    <div style="margin-top: 0">
-      <q-input outlined v-model="text" label="Message or Command (/)" @keyup.enter="sendMessage">
-        <q-tooltip v-model="isCommand"
-          ><div v-if="!commandFormatSelected">
+    <div>
+      <q-input
+        outlined
+        v-model="text"
+        label="Message or Command (/)"
+        @keyup.enter="sendMessage"
+        ref="chatInput"
+      >
+        <q-tooltip v-model="isCommand">
+          <div v-if="!commandFormatSelected">
             Command Detected: Enter command to see arguments format
           </div>
-          {{ commandFormatSelected }}</q-tooltip
-        ></q-input
-      >
+          {{ commandFormatSelected }}
+        </q-tooltip>
+      </q-input>
       <div style="padding: 0.3em 1em">
         <q-badge
           >Ed and Joanne is typing...
@@ -59,12 +71,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useIdentityStore } from 'src/stores/identity-store'
 import { useWebNotification } from '@vueuse/core'
 import { useMessagesStore } from 'src/stores/messages'
 import axios from 'axios'
+import { QInfiniteScroll } from 'quasar'
 import { storeToRefs } from 'pinia'
 
 // Stores
@@ -75,22 +88,26 @@ const messagesStore = useMessagesStore()
 // Variables
 const channelName = ref('')
 const chatContainer = useTemplateRef('chatContainer')
+const infiniteScroll = useTemplateRef<InstanceType<typeof QInfiniteScroll>>('infiniteScroll')
+const chatInput = useTemplateRef('chatInput')
 const closeChannelId = ref(0)
 const leaveChannelId = ref(0)
 const notificationsEnabled = ref(true)
 const { selectedChannelId } = storeToRefs(channelsStore)
 const text = ref('')
 
-const selectChannel = async (channelId: number) => {
-  selectedChannelId.value = channelId
-  await messagesStore.fetchMessagesForChannel(channelId)
-}
-
-const loadMoreMessages = (index: number, done: () => void) => {
-  setTimeout(() => {
-    console.log('Loading more messages')
+const loadMoreMessages = async (index: number, done: (stop?: boolean) => void) => {
+  setTimeout(async () => {
+    if (selectedChannelId.value) {
+      await messagesStore.fetchMessagesForChannel(selectedChannelId.value)
+      if (messagesStore.pagination.page >= messagesStore.pagination.totalPages) {
+        done(true) // Stop infinite scroll
+      } else {
+        done() // Continue allowing infinite scroll
+      }
+    }
     done()
-  }, 1000)
+  }, 1)
 }
 
 const isMessageHighlighted = (message: { text: string[] }) => {
@@ -103,9 +120,7 @@ const isMessageHighlighted = (message: { text: string[] }) => {
   })
 }
 
-const isCommand = computed(() => {
-  return text.value.startsWith('/')
-})
+const isCommand = computed(() => text.value.startsWith('/'))
 
 const commandFormats = [
   { name: '/join', format: '/join <channel>' },
@@ -143,7 +158,7 @@ const leaveChannel = async (channel: number) => {
   identityStore.leaveChannel(channel)
   leaveChannelId.value = 0
   await channelsStore.loadChannels()
-  selectChannel(channelsStore.channels[0].id)
+  channelsStore.selectChannel(channelsStore.channels[0].id)
 }
 
 const createChannel = async () => {
@@ -206,7 +221,7 @@ const handleCommand = () => {
       const name = args[0]
       const privateBool = Number(args[1]) === 1 ? true : false
       joinChannel(name, privateBool)
-
+      text.value = ''
       break
     case '/leave':
       const leaveChan = channelsStore.channels.find((channel) => channel.name === args[0])
@@ -216,22 +231,28 @@ const handleCommand = () => {
         console.log(`Channel ${args[0]} not found`)
       }
       leaveChannel(leaveChannelId.value)
+      text.value = ''
       break
     case '/create':
       createChannel()
+      text.value = ''
       break
     case '/invite':
       const userNickname = args[0]
       inviteUser(userNickname)
+      text.value = ''
       break
     case '/close':
       closeChannel()
+      text.value = ''
       break
     case '/list':
       listChannels()
+      text.value = ''
       break
     case '/help':
       showHelp()
+      text.value = ''
       break
     default:
       console.log('Unknown command')
@@ -277,11 +298,18 @@ const sendMessage = function () {
 const shouldDisplayName = (index: number) => {
   if (index === 0) return true
   if (selectedChannelId.value === null) return false
-  return (
-    messagesStore.messages[selectedChannelId.value][index].name !==
-    messagesStore.messages[selectedChannelId.value][index - 1].name
-  )
+  return messagesStore.messages[index].name !== messagesStore.messages[index - 1].name
 }
+
+watch(
+  () => selectedChannelId.value,
+  () => {
+    if (selectedChannelId.value !== null) {
+      infiniteScroll.value?.resume()
+      chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight
+    }
+  }
+)
 
 defineOptions({
   name: 'ChatPage'
@@ -289,6 +317,11 @@ defineOptions({
 </script>
 
 <style scoped>
+.chat-container {
+  display: grid;
+  height: 100vh;
+}
+
 .highlighted {
   background-color: rgba(221, 221, 30, 0.25);
   padding-top: 5px;

@@ -64,7 +64,7 @@
         />
         <q-separator />
         <div style="display: flex; padding: 1em; align-items: center">
-          <q-btn round color="primary" label="SC" style="margin-right: 1em">
+          <q-btn round color="primary" icon="person" style="margin-right: 1em">
             <q-menu>
               <q-list style="min-width: 100px">
                 <q-item
@@ -116,8 +116,8 @@
           </q-btn>
           <div>
             <div>
-              {{ identityStore.firstName }} {{ identityStore.lastName
-              }}<q-tooltip>{{ identityStore.nickname }}</q-tooltip>
+              {{ identityStore.firstName }} {{ identityStore.lastName }}
+              <q-tooltip>{{ identityStore.nickname }}</q-tooltip>
             </div>
             <div style="color: grey">{{ identityStore.email }}</div>
           </div>
@@ -216,9 +216,7 @@ import { ref, onMounted } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
-import { useMessagesStore } from 'src/stores/messages'
 import axios from 'axios'
-import { storeToRefs } from 'pinia'
 
 // Router
 const router = useRouter()
@@ -226,7 +224,6 @@ const router = useRouter()
 // Stores
 const channelsStore = useChannelsStore()
 const identityStore = useIdentityStore()
-const messagesStore = useMessagesStore()
 
 // Variables
 const channelName = ref('')
@@ -239,12 +236,10 @@ const isLoading = ref(true)
 const leaveChannelId = ref(0)
 const leftDrawerOpen = ref(false)
 const notificationsEnabled = ref(true)
-const { selectedChannelId } = storeToRefs(channelsStore)
 const state = ref('online')
 
-const selectChannel = async (channelId: number) => {
-  selectedChannelId.value = channelId
-  await messagesStore.fetchMessagesForChannel(channelId)
+const selectChannel = async (channel: number) => {
+  await channelsStore.selectChannel(channel)
 }
 
 const toggleLeftDrawer = () => {
@@ -263,7 +258,7 @@ const leaveChannel = async (channel: number) => {
   identityStore.leaveChannel(channel)
   leaveChannelId.value = 0
   await channelsStore.loadChannels()
-  selectChannel(channelsStore.channels[0].id)
+  channelsStore.selectChannel(channelsStore.channels[0].id)
 }
 
 const createChannel = async () => {

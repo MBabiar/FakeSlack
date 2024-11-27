@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useIdentityStore } from './identity-store'
+import { useSocketStore } from './socket'
 
 interface Message {
   id: number
@@ -13,42 +13,33 @@ interface Message {
 }
 
 export const useMessagesStore = defineStore('messages', () => {
-  const messages = ref<{ [channelId: number]: Message[] }>({})
-  const identityStore = useIdentityStore()
-  const socket = identityStore.socket
+  const socketStore = useSocketStore()
+
+  const loadingMessages = ref(false)
+  const messages = ref<Message[]>([])
+  const pagination = ref({ page: 0, pageSize: 20, total: 0, totalPages: 0 })
 
   const fetchMessagesForChannel = (channelId: number) => {
-    return new Promise<void>((resolve, reject) => {
-      if (socket) {
-        socket.emit('joinChannel', { channelId })
+    return new Promise<void>(async (resolve, reject) => {
+      if (socketStore.socket) {
+        socketStore.socket.emit('joinChannel', { channelId })
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        socket.on('messages', (receivedMessages: any) => {
-          // Extract name and text and assign to messages ref
-          messages.value[channelId] = receivedMessages.map(
-            (message: {
-              id: number
-              channelId: number
-              author: { id: number; nickname: string }
-              content: string
-              createdAt: string
-            }) => ({
-              id: message.id,
-              channelId: message.channelId,
-              name: message.author.nickname,
-              text: [message.content],
-              me: message.author.id === identityStore.id
-            })
-          )
-          resolve()
-        })
-
-        socket.on('error', (errorMessage: string) => {
+        socketStore.socket.on('error', (errorMessage: string) => {
           console.error('Error:', errorMessage)
           reject(errorMessage)
         })
 
-        socket.emit('getMessages', { channelId })
+        loadingMessages.value = true
+        socketStore.socket.emit('getMessages', {
+          channelId,
+          page: pagination.value.page + 1,
+          pageSize: pagination.value.pageSize
+        })
+
+        while (loadingMessages.value) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+        resolve()
       } else {
         console.error('Socket is not connected')
         reject('Socket is not connected')
@@ -56,29 +47,13 @@ export const useMessagesStore = defineStore('messages', () => {
     })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  socket.on('newMessage', (newMessage: any) => {
-    console.log('New message:', newMessage)
-    const message = {
-      id: newMessage.id,
-      channelId: newMessage.channelId,
-      userId: newMessage.author.id,
-      name: newMessage.author.nickname,
-      text: [newMessage.content],
-      createdAt: newMessage.createdAt,
-      me: newMessage.author.id === identityStore.id
-    }
-
-    messages.value[message.channelId].push(message)
-  })
-
   const sendMessage = (channelId: number, text: string) => {
-    if (socket) {
-      socket.emit('message', { channelId, text })
+    if (socketStore.socket) {
+      socketStore.socket.emit('message', { channelId, text })
     } else {
       console.error('Socket is not connected')
     }
   }
 
-  return { messages, fetchMessagesForChannel, sendMessage }
+  return { messages, loadingMessages, fetchMessagesForChannel, sendMessage, pagination }
 })

@@ -1,18 +1,18 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
-import { io } from 'socket.io-client'
 import { ref } from 'vue'
 import { Notify } from 'quasar'
+import { useSocketStore } from './socket'
 
 export const useIdentityStore = defineStore('identity', () => {
-  const id = ref()
-  const firstName = ref()
-  const lastName = ref()
+  const socketStore = useSocketStore()
+
   const email = ref()
+  const firstName = ref()
+  const id = ref()
+  const lastName = ref()
   const nickname = ref()
   const token = ref()
-
-  const socket = ref()
 
   const login = async (data: { email: string; password: string }) => {
     const response = await axios.post('http://localhost:3333/auth/login', {
@@ -29,7 +29,12 @@ export const useIdentityStore = defineStore('identity', () => {
       email.value = response.data.user.email
       nickname.value = response.data.user.nickname
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-      establishSocketConnection()
+      if (!socketStore.socket) {
+        socketStore.establishSocketConnection()
+      }
+
+      console.log('Logged in')
+      console.log(response.data)
 
       Notify.create({
         type: 'positive',
@@ -69,12 +74,6 @@ export const useIdentityStore = defineStore('identity', () => {
     })
   }
 
-  const establishSocketConnection = () => {
-    console.log('establishing socket connection')
-    const sock = io('http://localhost:3333', { auth: { token: token.value } })
-    socket.value = sock
-  }
-
   const checkLoggedIn = async () => {
     const storedToken = localStorage.getItem('token')
 
@@ -94,7 +93,9 @@ export const useIdentityStore = defineStore('identity', () => {
     email.value = response.data.email
     nickname.value = response.data.nickname
 
-    establishSocketConnection()
+    if (!socketStore.socket) {
+      socketStore.establishSocketConnection()
+    }
   }
 
   const logout = async () => {
@@ -104,26 +105,25 @@ export const useIdentityStore = defineStore('identity', () => {
     email.value = null
     nickname.value = null
     token.value = null
-    socket.value.disconnect()
+    socketStore.socket.disconnect()
     localStorage.removeItem('token')
   }
 
   const leaveChannel = (id: number) => {
-    socket.value.emit('leaveChannel', { channelId: id })
+    socketStore.socket.emit('leaveChannel', { channelId: id })
   }
 
   return {
-    id,
-    firstName,
-    lastName,
+    checkLoggedIn,
     email,
+    firstName,
+    id,
+    lastName,
+    leaveChannel,
+    login,
+    logout,
     nickname,
     register,
-    login,
-    token,
-    checkLoggedIn,
-    socket,
-    leaveChannel,
-    logout
+    token
   }
 })
