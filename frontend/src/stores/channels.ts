@@ -20,12 +20,11 @@ export const useChannelsStore = defineStore('channels', () => {
   const channels = ref<Channel[]>([])
   const selectedChannelId = ref<number | null>(null)
 
-  const selectChannel = async (channelId: number) => {
+  const selectChannel = (channelId: number) => {
     messagesStore.pagination.page = 0
     messagesStore.messages = []
     leaveChannelSocket(selectedChannelId.value)
     joinChannelSocket(channelId)
-    await messagesStore.fetchMessagesForChannel(channelId)
     selectedChannelId.value = channelId
   }
 
@@ -111,7 +110,6 @@ export const useChannelsStore = defineStore('channels', () => {
     }
 
     const users = response.data.map((user: { nickname: string }) => user.nickname)
-    console.log('User Nicknames:', users)
 
     Notify.create({
       type: 'List of users',

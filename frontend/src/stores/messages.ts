@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSocketStore } from './socket'
+import axios from 'axios'
+import { useIdentityStore } from './identity-store'
 
 interface Message {
   id: number
@@ -20,47 +22,52 @@ interface typingMember {
 
 export const useMessagesStore = defineStore('messages', () => {
   const socketStore = useSocketStore()
+  const identityStore = useIdentityStore()
 
-  const loadingMessages = ref(false)
   const messages = ref<Message[]>([])
   const typingMembers = ref<typingMember[]>([])
   const pagination = ref({ page: 0, pageSize: 20, total: 0, totalPages: 0 })
 
-  const fetchMessagesForChannel = (channelId: number) => {
-    return new Promise<void>(async (resolve, reject) => {
-      let attempts = 0
-      const maxAttempts = 5
+  const fetchMessagesForChannel = async (channelId: number) => {
+    const fetchPage = pagination.value.page + 1
+    const response = await axios.get(
+      `http://localhost:3333/channel/messages/${channelId}/${fetchPage}`
+    )
 
-      while (!socketStore.socket && attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        attempts++
-      }
+    if (response.status !== 200) {
+      console.error('Error:', response.data)
+      return
+    }
 
-      if (!socketStore.socket) {
-        reject(new Error('Socket connection not available after retry attempts'))
-        return
-      }
+    const paginationResp = response.data.pagination
+    const messagesResp = response.data.messages
 
-      const errorHandler = (errorMessage: string) => {
-        console.error('Error:', errorMessage)
-        reject(errorMessage)
-      }
-      socketStore.socket.once('error', errorHandler)
+    pagination.value = {
+      page: paginationResp.page as number,
+      pageSize: paginationResp.pageSize,
+      total: paginationResp.total,
+      totalPages: paginationResp.totalPages
+    }
 
-      loadingMessages.value = true
-      socketStore.socket.emit('getMessages', {
-        channelId,
-        page: pagination.value.page + 1,
-        pageSize: pagination.value.pageSize
+    const newMessages = messagesResp.map(
+      (message: {
+        id: number
+        channelId: number
+        author: { id: number; nickname: string }
+        content: string
+        createdAt: string
+      }) => ({
+        id: message.id,
+        channelId: message.channelId,
+        name: message.author.nickname,
+        text: [message.content],
+        me: message.author.id === identityStore.id
       })
+    )
 
-      while (loadingMessages.value) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-      }
-
-      socketStore.socket.off('error', errorHandler)
-      resolve()
-    })
+    messages.value = [...newMessages, ...messages.value].filter(
+      (message, index, self) => index === self.findIndex((m) => m.id === message.id)
+    )
   }
 
   const sendMessage = (channelId: number, text: string) => {
@@ -81,7 +88,6 @@ export const useMessagesStore = defineStore('messages', () => {
 
   return {
     messages,
-    loadingMessages,
     pagination,
     typingMembers,
     fetchMessagesForChannel,

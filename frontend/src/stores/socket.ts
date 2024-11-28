@@ -32,37 +32,6 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    socket.value.on('fetchMessages', (receivedMessages: any) => {
-      // Extract name and text and assign to messages ref
-      messagesStore.pagination = {
-        page: receivedMessages.pagination.page,
-        pageSize: receivedMessages.pagination.pageSize,
-        total: receivedMessages.pagination.total,
-        totalPages: receivedMessages.pagination.totalPages
-      }
-      const newMessages = receivedMessages.data.map(
-        (message: {
-          id: number
-          channelId: number
-          author: { id: number; nickname: string }
-          content: string
-          createdAt: string
-        }) => ({
-          id: message.id,
-          channelId: message.channelId,
-          name: message.author.nickname,
-          text: [message.content],
-          me: message.author.id === identityStore.id
-        })
-      )
-
-      messagesStore.messages = [...newMessages, ...messagesStore.messages].filter(
-        (message, index, self) => index === self.findIndex((m) => m.id === message.id)
-      )
-      messagesStore.loadingMessages = false
-    })
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socket.value.on('newMessage', (newMessage: any) => {
       const message = {
         id: newMessage.id,

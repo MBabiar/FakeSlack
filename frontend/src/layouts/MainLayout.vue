@@ -238,9 +238,9 @@ const leftDrawerOpen = ref(false)
 const notificationsEnabled = ref(true)
 const state = ref('online')
 
-const selectChannel = async (channel: number) => {
+const selectChannel = (channel: number) => {
   try {
-    await channelsStore.selectChannel(channel)
+    channelsStore.selectChannel(channel)
   } catch (error) {
     console.error('Failed to select channel:', error)
   }
