@@ -109,17 +109,12 @@ export const useIdentityStore = defineStore('identity', () => {
     localStorage.removeItem('token')
   }
 
-  const leaveChannel = (id: number) => {
-    socketStore.socket.emit('leaveChannel', { channelId: id })
-  }
-
   return {
     checkLoggedIn,
     email,
     firstName,
     id,
     lastName,
-    leaveChannel,
     login,
     logout,
     nickname,

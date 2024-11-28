@@ -156,7 +156,7 @@ const joinChannel = async (name: string, privateBool: boolean) => {
 }
 
 const leaveChannel = async (channel: number) => {
-  identityStore.leaveChannel(channel)
+  await channelsStore.leaveChannel(channel)
   leaveChannelId.value = 0
   await channelsStore.loadChannels()
   channelsStore.selectChannel(channelsStore.channels[0].id)

@@ -32,7 +32,7 @@ export const useSocketStore = defineStore('socket', () => {
     })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    socket.value.on('messages', (receivedMessages: any) => {
+    socket.value.on('fetchMessages', (receivedMessages: any) => {
       // Extract name and text and assign to messages ref
       messagesStore.pagination = {
         page: receivedMessages.pagination.page,

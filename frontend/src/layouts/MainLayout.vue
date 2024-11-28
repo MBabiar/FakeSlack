@@ -259,7 +259,7 @@ const switchState = function (newState: string) {
 }
 
 const leaveChannel = async (channel: number) => {
-  identityStore.leaveChannel(channel)
+  channelsStore.leaveChannel(channel)
   leaveChannelId.value = 0
   await channelsStore.loadChannels()
   channelsStore.selectChannel(channelsStore.channels[0].id)

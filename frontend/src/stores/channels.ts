@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useMessagesStore } from './messages'
 import { useSocketStore } from './socket'
+import axios from 'axios'
+import { Notify } from 'quasar'
 
 interface Channel {
   id: number
@@ -21,12 +23,19 @@ export const useChannelsStore = defineStore('channels', () => {
   const selectChannel = async (channelId: number) => {
     messagesStore.pagination.page = 0
     messagesStore.messages = []
-    joinChannel(channelId)
+    leaveChannelSocket(selectedChannelId.value)
+    joinChannelSocket(channelId)
     await messagesStore.fetchMessagesForChannel(channelId)
     selectedChannelId.value = channelId
   }
 
-  const joinChannel = (channelId: number) => {
+  const leaveChannelSocket = (channelId: number | null) => {
+    if (socketStore.socket && channelId !== null) {
+      socketStore.socket.emit('leaveChannel', { channelId })
+    }
+  }
+
+  const joinChannelSocket = (channelId: number) => {
     if (socketStore.socket) {
       socketStore.socket.emit('joinChannel', { channelId })
     } else {
@@ -54,11 +63,33 @@ export const useChannelsStore = defineStore('channels', () => {
     })
   }
 
+  const leaveChannel = async (channelId: number) => {
+    const response = await axios.delete(`http://localhost:3333/channel/leave/${channelId}`)
+    if (response.status === 200) {
+      if (response.data.message === 'Channel deleted') {
+        Notify.create({
+          type: 'positive',
+          message: 'Channel deleted',
+          position: 'top'
+        })
+      }
+      if (response.data.message === 'User left channel') {
+        Notify.create({
+          type: 'positive',
+          message: 'You left channel',
+          position: 'top'
+        })
+      }
+    }
+    return
+  }
+
   return {
     channels,
     selectedChannelId,
     loadingChannels,
     loadChannels,
-    selectChannel
+    selectChannel,
+    leaveChannel
   }
 })

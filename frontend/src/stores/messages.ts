@@ -50,7 +50,7 @@ export const useMessagesStore = defineStore('messages', () => {
 
   const sendMessage = (channelId: number, text: string) => {
     if (socketStore.socket) {
-      socketStore.socket.emit('message', { channelId, text })
+      socketStore.socket.emit('sendMessage', { channelId, text })
     } else {
       console.error('Socket is not connected')
     }
