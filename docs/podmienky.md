@@ -51,4 +51,3 @@
 5. používateľ si môže nastaviť stav (online, DND, offline)
     - ak je nastavený DND stav, neprichádzajú notifikácie
     - ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
-6. používateľ si môže pozrieť zoznam členov kanála (ak je tiež členom kanála) príkazom /list
