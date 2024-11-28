@@ -61,10 +61,19 @@
         </q-tooltip>
       </q-input>
       <div style="padding: 0.3em 1em">
-        <q-badge
-          >Ed and Joanne is typing...
-          <q-tooltip>Ed: Aho<br />Joanne: sranda to bo</q-tooltip></q-badge
-        >
+        <q-badge v-if="showTypingIndicator">
+          {{ firstTypingMember }} is typing...
+          <q-tooltip>
+            <template
+              v-for="(member, index) in messagesStore.typingMembers"
+              :key="member.userNickname"
+            >
+              {{ member.userNickname }}: {{ member.text.slice(0, 30)
+              }}{{ member.text.length > 30 ? '...' : '' }}
+              <br v-if="index < messagesStore.typingMembers.length - 1" />
+            </template>
+          </q-tooltip>
+        </q-badge>
       </div>
     </div>
   </q-page-container>
@@ -95,6 +104,8 @@ const leaveChannelId = ref(0)
 const notificationsEnabled = ref(true)
 const { selectedChannelId } = storeToRefs(channelsStore)
 const text = ref('')
+const showTypingIndicator = ref(false)
+const firstTypingMember = ref('')
 
 const loadMoreMessages = async (index: number, done: (stop?: boolean) => void) => {
   setTimeout(async () => {
@@ -312,6 +323,29 @@ watch(
       chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight
     }
   }
+)
+
+watch(
+  () => text.value,
+  (newValue) => {
+    if (selectedChannelId.value !== null && newValue.length > 0 && isCommand.value === false) {
+      messagesStore.sendTyping(selectedChannelId.value, newValue)
+    }
+  }
+)
+
+watch(
+  () => messagesStore.typingMembers,
+  (newTypingMembers) => {
+    if (newTypingMembers?.length > 0) {
+      firstTypingMember.value = newTypingMembers[0].userNickname
+      showTypingIndicator.value = true
+    } else {
+      firstTypingMember.value = ''
+      showTypingIndicator.value = false
+    }
+  },
+  { immediate: true, deep: true }
 )
 
 defineOptions({

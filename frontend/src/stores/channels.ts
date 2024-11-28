@@ -45,21 +45,40 @@ export const useChannelsStore = defineStore('channels', () => {
 
   const loadChannels = () => {
     return new Promise<void>(async (resolve, reject) => {
+      // Wait for socket to be available (with timeout)
+      let attempts = 0
+      const maxAttempts = 5
+
+      while (!socketStore.socket && attempts < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        attempts++
+      }
+
+      if (!socketStore.socket) {
+        reject(new Error('Socket connection not available after retry attempts'))
+        return
+      }
+
       const errorHandler = (errorMessage: string) => {
         console.error('Error:', errorMessage)
         reject(errorMessage)
       }
 
-      socketStore.socket.once('error', errorHandler)
+      try {
+        socketStore.socket.once('error', errorHandler)
+        loadingChannels.value = true
+        socketStore.socket.emit('getChannels')
 
-      loadingChannels.value = true
-      socketStore.socket.emit('getChannels')
-      while (loadingChannels.value) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        while (loadingChannels.value) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+
+        socketStore.socket.off('error', errorHandler)
+        resolve()
+      } catch (error) {
+        socketStore.socket?.off('error', errorHandler)
+        reject(error)
       }
-
-      socketStore.socket.off('error', errorHandler)
-      resolve()
     })
   }
 

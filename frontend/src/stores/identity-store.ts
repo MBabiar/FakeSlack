@@ -34,7 +34,6 @@ export const useIdentityStore = defineStore('identity', () => {
       }
 
       console.log('Logged in')
-      console.log(response.data)
 
       Notify.create({
         type: 'positive',

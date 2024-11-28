@@ -76,6 +76,41 @@ export const useSocketStore = defineStore('socket', () => {
 
       messagesStore.messages.push(message)
     })
+
+    socket.value.on('getTyping', (data: { userNickname: string; text: string }) => {
+      // Clear existing timeout if member exists
+      const existingIndex = messagesStore.typingMembers.findIndex(
+        (typingMember) => typingMember.userNickname === data.userNickname
+      )
+
+      if (existingIndex !== -1) {
+        clearTimeout(messagesStore.typingMembers[existingIndex].timeoutId)
+        // Update existing member
+        const updatedMembers = [...messagesStore.typingMembers]
+        updatedMembers[existingIndex] = {
+          ...data,
+          timeoutId: setTimeout(() => {
+            messagesStore.typingMembers = messagesStore.typingMembers.filter(
+              (member) => member.userNickname !== data.userNickname
+            )
+          }, 10000)
+        }
+        messagesStore.typingMembers = updatedMembers
+      } else {
+        // Add new member
+        messagesStore.typingMembers = [
+          ...messagesStore.typingMembers,
+          {
+            ...data,
+            timeoutId: setTimeout(() => {
+              messagesStore.typingMembers = messagesStore.typingMembers.filter(
+                (member) => member.userNickname !== data.userNickname
+              )
+            }, 10000)
+          }
+        ]
+      }
+    })
   }
 
   return {
