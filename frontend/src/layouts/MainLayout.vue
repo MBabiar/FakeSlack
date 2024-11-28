@@ -239,7 +239,11 @@ const notificationsEnabled = ref(true)
 const state = ref('online')
 
 const selectChannel = async (channel: number) => {
-  await channelsStore.selectChannel(channel)
+  try {
+    await channelsStore.selectChannel(channel)
+  } catch (error) {
+    console.error('Failed to select channel:', error)
+  }
 }
 
 const toggleLeftDrawer = () => {

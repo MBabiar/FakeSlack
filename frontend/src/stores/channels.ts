@@ -21,36 +21,35 @@ export const useChannelsStore = defineStore('channels', () => {
   const selectChannel = async (channelId: number) => {
     messagesStore.pagination.page = 0
     messagesStore.messages = []
-    // await joinChannel(channelId)
+    joinChannel(channelId)
     await messagesStore.fetchMessagesForChannel(channelId)
     selectedChannelId.value = channelId
   }
 
-  // const joinChannel = (channelId: number) => {
-  //   return new Promise<void>((resolve, reject) => {
-  //     if (socketStore.socket) {
-  //       socketStore.socket.emit('joinChannel', { channelId })
-  //       resolve()
-  //     } else {
-  //       console.error('Socket is not connected')
-  //       reject('Socket is not connected')
-  //     }
-  //   })
-  // }
+  const joinChannel = (channelId: number) => {
+    if (socketStore.socket) {
+      socketStore.socket.emit('joinChannel', { channelId })
+    } else {
+      console.error('Socket is not connected')
+    }
+  }
 
   const loadChannels = () => {
     return new Promise<void>(async (resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      socketStore.socket.on('error', (errorMessage: any) => {
+      const errorHandler = (errorMessage: string) => {
         console.error('Error:', errorMessage)
         reject(errorMessage)
-      })
+      }
+
+      socketStore.socket.once('error', errorHandler)
 
       loadingChannels.value = true
       socketStore.socket.emit('getChannels')
       while (loadingChannels.value) {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
+
+      socketStore.socket.off('error', errorHandler)
       resolve()
     })
   }

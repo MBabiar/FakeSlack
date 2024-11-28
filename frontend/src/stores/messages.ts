@@ -22,12 +22,11 @@ export const useMessagesStore = defineStore('messages', () => {
   const fetchMessagesForChannel = (channelId: number) => {
     return new Promise<void>(async (resolve, reject) => {
       if (socketStore.socket) {
-        socketStore.socket.emit('joinChannel', { channelId })
-
-        socketStore.socket.on('error', (errorMessage: string) => {
+        const errorHandler = (errorMessage: string) => {
           console.error('Error:', errorMessage)
           reject(errorMessage)
-        })
+        }
+        socketStore.socket.once('error', errorHandler)
 
         loadingMessages.value = true
         socketStore.socket.emit('getMessages', {
@@ -39,6 +38,8 @@ export const useMessagesStore = defineStore('messages', () => {
         while (loadingMessages.value) {
           await new Promise((resolve) => setTimeout(resolve, 100))
         }
+
+        socketStore.socket.off('error', errorHandler)
         resolve()
       } else {
         console.error('Socket is not connected')
