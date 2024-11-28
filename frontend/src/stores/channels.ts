@@ -103,12 +103,30 @@ export const useChannelsStore = defineStore('channels', () => {
     return
   }
 
+  const listUsers = async (channelId: number) => {
+    const response = await axios.get(`http://localhost:3333/channel/users/${channelId}`)
+    if (response.status !== 200) {
+      console.error('Error:', response.data)
+      return
+    }
+
+    const users = response.data.map((user: { nickname: string }) => user.nickname)
+    console.log('User Nicknames:', users)
+
+    Notify.create({
+      type: 'List of users',
+      message: users.join(', '),
+      position: 'top'
+    })
+  }
+
   return {
     channels,
     selectedChannelId,
     loadingChannels,
     loadChannels,
     selectChannel,
-    leaveChannel
+    leaveChannel,
+    listUsers
   }
 })

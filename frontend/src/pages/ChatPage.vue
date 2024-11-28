@@ -69,8 +69,8 @@
               :key="member.userNickname"
             >
               {{ member.userNickname }}: {{ member.text.slice(0, 30)
-              }}{{ member.text.length > 30 ? '...' : '' }}
-              <br v-if="index < messagesStore.typingMembers.length - 1" />
+              }}{{ member.text.length > 30 ? '...' : ''
+              }}<br v-if="index < messagesStore.typingMembers.length - 1" />
             </template>
           </q-tooltip>
         </q-badge>
@@ -216,11 +216,6 @@ const closeChannel = () => {
   closeChannelId.value = 0
 }
 
-const listChannels = () => {
-  console.log('Listing channels')
-  // Add your list channels logic here
-}
-
 const showHelp = () => {
   console.log('Showing help')
   // Add your help logic here
@@ -261,7 +256,7 @@ const handleCommand = () => {
       text.value = ''
       break
     case '/list':
-      listChannels()
+      listUsers()
       text.value = ''
       break
     case '/help':
@@ -306,6 +301,18 @@ const sendMessage = function () {
     setTimeout(() => {
       chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight
     }, 10)
+  }
+}
+
+const listUsers = async () => {
+  try {
+    if (selectedChannelId.value === null) {
+      console.error('No channel selected')
+      return
+    }
+    await channelsStore.listUsers(selectedChannelId.value)
+  } catch (error) {
+    console.error('Error listing users:', error)
   }
 }
 
