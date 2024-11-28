@@ -124,7 +124,8 @@ const isCommand = computed(() => text.value.startsWith('/'))
 
 const commandFormats = [
   { name: '/join', format: '/join <channel>' },
-  { name: '/leave', format: '/leave <channel>' },
+  { name: '/cancel', format: '/cancel' },
+  { name: '/quit', format: '/quit' },
   { name: '/create', format: '/create <channel>' },
   { name: '/invite', format: '/invite <user>' },
   { name: '/close', format: '/close <channel>' },
@@ -223,15 +224,17 @@ const handleCommand = () => {
       joinChannel(name, privateBool)
       text.value = ''
       break
-    case '/leave':
-      const leaveChan = channelsStore.channels.find((channel) => channel.name === args[0])
-      if (leaveChan) {
-        leaveChannelId.value = leaveChan.id
-      } else {
-        console.log(`Channel ${args[0]} not found`)
+    case '/quit':
+      if (channelsStore.selectedChannelId) {
+        leaveChannel(channelsStore.selectedChannelId)
+        text.value = ''
       }
-      leaveChannel(leaveChannelId.value)
-      text.value = ''
+      break
+    case '/cancel':
+      if (channelsStore.selectedChannelId) {
+        leaveChannel(channelsStore.selectedChannelId)
+        text.value = ''
+      }
       break
     case '/create':
       createChannel()
