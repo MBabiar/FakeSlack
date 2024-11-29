@@ -3,12 +3,10 @@ import { io } from 'socket.io-client'
 import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
-import { useChannelsStore } from './channels'
 
 export const useSocketStore = defineStore('socket', () => {
   const identityStore = useIdentityStore()
   const messagesStore = useMessagesStore()
-  const channelStore = useChannelsStore()
 
   const socket = ref()
 
@@ -20,17 +18,6 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const defineSocketListeners = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    socket.value.on('channels', (receivedChannels: any) => {
-      // Update the channels ref
-      if (receivedChannels) {
-        channelStore.channels = receivedChannels
-        channelStore.loadingChannels = false
-      } else {
-        channelStore.channels = []
-      }
-    })
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socket.value.on('newMessage', (newMessage: any) => {
       const message = {

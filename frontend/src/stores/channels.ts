@@ -16,7 +16,6 @@ export const useChannelsStore = defineStore('channels', () => {
   const messagesStore = useMessagesStore()
   const socketStore = useSocketStore()
 
-  const loadingChannels = ref(false)
   const channels = ref<Channel[]>([])
   const selectedChannelId = ref<number | null>(null)
 
@@ -42,43 +41,16 @@ export const useChannelsStore = defineStore('channels', () => {
     }
   }
 
-  const loadChannels = () => {
-    return new Promise<void>(async (resolve, reject) => {
-      // Wait for socket to be available (with timeout)
-      let attempts = 0
-      const maxAttempts = 5
+  const loadChannels = async () => {
+    const response = await axios.get('http://localhost:3333/channels')
+    if (response.status !== 200) {
+      console.error('Error:', response.data)
+      return
+    }
 
-      while (!socketStore.socket && attempts < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        attempts++
-      }
+    console.log('Channels:', response.data)
 
-      if (!socketStore.socket) {
-        reject(new Error('Socket connection not available after retry attempts'))
-        return
-      }
-
-      const errorHandler = (errorMessage: string) => {
-        console.error('Error:', errorMessage)
-        reject(errorMessage)
-      }
-
-      try {
-        socketStore.socket.once('error', errorHandler)
-        loadingChannels.value = true
-        socketStore.socket.emit('getChannels')
-
-        while (loadingChannels.value) {
-          await new Promise((resolve) => setTimeout(resolve, 100))
-        }
-
-        socketStore.socket.off('error', errorHandler)
-        resolve()
-      } catch (error) {
-        socketStore.socket?.off('error', errorHandler)
-        reject(error)
-      }
-    })
+    channels.value = response.data
   }
 
   const leaveChannel = async (channelId: number) => {
@@ -121,7 +93,6 @@ export const useChannelsStore = defineStore('channels', () => {
   return {
     channels,
     selectedChannelId,
-    loadingChannels,
     loadChannels,
     selectChannel,
     leaveChannel,
