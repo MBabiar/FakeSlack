@@ -183,6 +183,7 @@ const createChannel = async () => {
       channelsStore.channels.push({
         id: response.data.id,
         name: channelName.value,
+        isAuthor: true,
         new: true,
         private: false
       })

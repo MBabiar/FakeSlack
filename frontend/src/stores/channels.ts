@@ -8,6 +8,7 @@ import { Notify } from 'quasar'
 interface Channel {
   id: number
   name: string
+  isAuthor: boolean
   private: boolean
   new: boolean
 }
@@ -47,9 +48,6 @@ export const useChannelsStore = defineStore('channels', () => {
       console.error('Error:', response.data)
       return
     }
-
-    console.log('Channels:', response.data)
-
     channels.value = response.data
   }
 

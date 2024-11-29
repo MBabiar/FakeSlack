@@ -17,8 +17,16 @@
 
               <q-item-section>
                 <q-item-label lines="1" style="display: flex; flex-direction: row">
-                  <div>{{ channel.name }}</div>
-
+                  <div class="row items-center">
+                    {{ channel.name }}
+                    <q-icon
+                      v-if="channel.isAuthor"
+                      name="star"
+                      color="amber-8"
+                      size="xs"
+                      class="q-ml-xs"
+                    />
+                  </div>
                   <q-badge color="primary" v-if="channel.new" style="margin-left: auto">
                     NEW
                   </q-badge>
@@ -275,6 +283,7 @@ const createChannel = async () => {
       channelsStore.channels.push({
         id: response.data.id,
         name: channelName.value,
+        isAuthor: true,
         new: true,
         private: false
       })
