@@ -37,8 +37,6 @@
 
 # TODO
 
-2. používateľ vidí zoznam kanálov, v ktorých je členom
-    - ak nie je kanál aktívny (nie je pridaná nová správa) viac ako 30 dní, kanál prestáva existovať (následne je možné použiť channelName kanála pre "nový" kanál)
 3. vytvorenie komunikačného kanála (channel) cez príkazový riadok
     - do súkromného kanála môže pridávať/odoberať používateľov iba správca kanála cez príkazy /invite nickName a /revoke nickName
     - do verejného kanála sa môže pridať ľubovolný používateľ cez príkaz /join channelName (ak kanál neexistuje, automaticky sa vytvorí)
