@@ -42,13 +42,61 @@ export const useChannelsStore = defineStore('channels', () => {
     }
   }
 
-  const loadChannels = async () => {
+  const loadChannels = async (reset: boolean) => {
     const response = await axios.get('http://localhost:3333/channels')
     if (response.status !== 200) {
       console.error('Error:', response.data)
       return
     }
     channels.value = response.data
+    if (reset) {
+      selectedChannelId.value = channels.value[0].id
+    }
+  }
+
+  const createChannel = async (name: string, privateBool: boolean) => {
+    try {
+      const response = await axios.post('http://localhost:3333/channels', {
+        name: name,
+        private: privateBool
+      })
+
+      if (response.status === 201) {
+        channels.value.unshift({
+          id: response.data.id,
+          name: name,
+          isAuthor: true,
+          new: true,
+          private: privateBool
+        })
+      }
+    } catch (error) {
+      console.error('Error creating channel:', error)
+    }
+  }
+
+  const joinChannel = async (name: string, privateBool: boolean) => {
+    console.log(`Joining channel: ${name}`)
+
+    try {
+      const response = await axios.post('http://localhost:3333/channel/join', {
+        channelName: name,
+        privateBool: privateBool
+      })
+
+      if (response.status === 200) {
+        console.log('Joined channel:', name)
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error('Error joining channel:', error)
+      Notify.create({
+        color: 'negative',
+        message: error.response.data.message,
+        position: 'top'
+      })
+    }
+    loadChannels(false)
   }
 
   const leaveChannel = async (channelId: number) => {
@@ -69,10 +117,13 @@ export const useChannelsStore = defineStore('channels', () => {
         })
       }
     }
+    loadChannels(true)
     return
   }
 
-  const listUsers = async (channelId: number) => {
+  const listUsers = async () => {
+    const channelId = selectedChannelId.value
+
     const response = await axios.get(`http://localhost:3333/channel/users/${channelId}`)
     if (response.status !== 200) {
       console.error('Error:', response.data)
@@ -88,12 +139,53 @@ export const useChannelsStore = defineStore('channels', () => {
     })
   }
 
+  const inviteUser = async (userNickname: string): Promise<void> => {
+    if (!socketStore.socket) {
+      console.error('Socket is not connected')
+      throw new Error('Socket not connected')
+    }
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (error: string) => {
+        console.error('Error inviting user:', error)
+        Notify.create({
+          type: 'negative',
+          message: error,
+          position: 'top'
+        })
+        reject(error)
+      }
+
+      // Bind error handler
+      socketStore.socket.once('error', errorHandler)
+
+      // Listen for success response
+      socketStore.socket.once('inviteUserSuccess', () => {
+        socketStore.socket.off('error', errorHandler) // Remove error listener
+
+        Notify.create({
+          type: 'positive',
+          message: `${userNickname} invited successfully`,
+          position: 'top'
+        })
+        resolve()
+      })
+
+      // Emit invite request
+      const inviteChannelId = selectedChannelId.value
+      socketStore.socket.emit('inviteUser', { inviteChannelId, userNickname })
+    })
+  }
+
   return {
     channels,
-    selectedChannelId,
+    inviteUser,
+    joinChannel,
+    leaveChannel,
+    listUsers,
     loadChannels,
     selectChannel,
-    leaveChannel,
-    listUsers
+    selectedChannelId,
+    createChannel
   }
 })

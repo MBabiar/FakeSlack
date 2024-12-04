@@ -85,7 +85,6 @@ import { useChannelsStore } from 'src/stores/channels'
 import { useIdentityStore } from 'src/stores/identity-store'
 import { useWebNotification } from '@vueuse/core'
 import { useMessagesStore } from 'src/stores/messages'
-import axios from 'axios'
 import { QInfiniteScroll } from 'quasar'
 import { storeToRefs } from 'pinia'
 
@@ -95,17 +94,38 @@ const identityStore = useIdentityStore()
 const messagesStore = useMessagesStore()
 
 // Variables
-const channelName = ref('')
+const { selectedChannelId } = storeToRefs(channelsStore)
 const chatContainer = useTemplateRef('chatContainer')
-const infiniteScroll = useTemplateRef<InstanceType<typeof QInfiniteScroll>>('infiniteScroll')
 const chatInput = useTemplateRef('chatInput')
 const closeChannelId = ref(0)
+const firstTypingMember = ref('')
+const infiniteScroll = useTemplateRef<InstanceType<typeof QInfiniteScroll>>('infiniteScroll')
 const leaveChannelId = ref(0)
 const notificationsEnabled = ref(true)
-const { selectedChannelId } = storeToRefs(channelsStore)
-const text = ref('')
 const showTypingIndicator = ref(false)
-const firstTypingMember = ref('')
+const text = ref('')
+const commandFormats = [
+  { name: '/join', format: '/join <channel> <private>' },
+  { name: '/cancel', format: '/cancel' },
+  { name: '/quit', format: '/quit' },
+  { name: '/create', format: '/create <channel> <private>' },
+  { name: '/invite', format: '/invite <user>' },
+  { name: '/close', format: '/close <channel>' },
+  { name: '/list', format: '/list' },
+  { name: '/help', format: '/help' }
+]
+
+const isCommand = computed(() => text.value.startsWith('/'))
+
+const commandFormatSelected = computed(() => {
+  return commandFormats.find((command) => text.value.startsWith(command.name))?.format
+})
+
+const shouldDisplayName = (index: number) => {
+  if (index === 0) return true
+  if (selectedChannelId.value === null) return false
+  return messagesStore.messages[index].name !== messagesStore.messages[index - 1].name
+}
 
 const loadMoreMessages = async (index: number, done: (stop?: boolean) => void) => {
   setTimeout(async () => {
@@ -118,7 +138,7 @@ const loadMoreMessages = async (index: number, done: (stop?: boolean) => void) =
       }
     }
     done()
-  }, 1)
+  }, 50)
 }
 
 const isMessageHighlighted = (message: { text: string[] }) => {
@@ -129,85 +149,6 @@ const isMessageHighlighted = (message: { text: string[] }) => {
       text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
     )
   })
-}
-
-const isCommand = computed(() => text.value.startsWith('/'))
-
-const commandFormats = [
-  { name: '/join', format: '/join <channel>' },
-  { name: '/cancel', format: '/cancel' },
-  { name: '/quit', format: '/quit' },
-  { name: '/create', format: '/create <channel>' },
-  { name: '/invite', format: '/invite <user>' },
-  { name: '/close', format: '/close <channel>' },
-  { name: '/list', format: '/list' },
-  { name: '/help', format: '/help' }
-]
-
-const commandFormatSelected = computed(() => {
-  return commandFormats.find((command) => text.value.startsWith(command.name))?.format
-})
-
-const joinChannel = async (name: string, privateBool: boolean) => {
-  console.log(`Joining channel: ${name}`)
-
-  try {
-    const response = await axios.post('http://localhost:3333/channel/join', {
-      channelName: name,
-      privateBool: privateBool
-    })
-
-    if (response.status === 200) {
-      console.log('Joined channel:', name)
-    }
-  } catch (error) {
-    console.error('Error joining channel:', error)
-  }
-  channelsStore.loadChannels()
-}
-
-const leaveChannel = async (channel: number) => {
-  await channelsStore.leaveChannel(channel)
-  leaveChannelId.value = 0
-  await channelsStore.loadChannels()
-  channelsStore.selectChannel(channelsStore.channels[0].id)
-}
-
-const createChannel = async () => {
-  try {
-    const response = await axios.post('http://localhost:3333/channels', {
-      name: channelName.value
-    })
-
-    if (response.status === 201) {
-      channelsStore.channels.push({
-        id: response.data.id,
-        name: channelName.value,
-        isAuthor: true,
-        new: true,
-        private: false
-      })
-      channelName.value = ''
-    }
-  } catch (error) {
-    console.error('Error creating channel:', error)
-  }
-}
-
-const inviteUser = async (userNickname: string) => {
-  console.log('Inviting user')
-  try {
-    const response = await axios.post('http://localhost:3333/channel/invite', {
-      channelId: selectedChannelId.value,
-      userNickname: userNickname
-    })
-
-    if (response.status === 200) {
-      console.log('User invited')
-    }
-  } catch (error) {
-    console.error('Error inviting user:', error)
-  }
 }
 
 const closeChannel = () => {
@@ -226,30 +167,28 @@ const handleCommand = () => {
   const [command, ...args] = text.value.split(' ')
   switch (command) {
     case '/join':
-      const name = args[0]
-      const privateBool = Number(args[1]) === 1 ? true : false
-      joinChannel(name, privateBool)
+      const nameJoin = args[0]
+      const privateBoolJoin = Number(args[1]) === 1 ? true : false
+      channelsStore.joinChannel(nameJoin, privateBoolJoin)
       text.value = ''
       break
     case '/quit':
-      if (channelsStore.selectedChannelId) {
-        leaveChannel(channelsStore.selectedChannelId)
-        text.value = ''
-      }
-      break
     case '/cancel':
       if (channelsStore.selectedChannelId) {
-        leaveChannel(channelsStore.selectedChannelId)
+        channelsStore.leaveChannel(channelsStore.selectedChannelId)
+        leaveChannelId.value = 0
         text.value = ''
       }
       break
     case '/create':
-      createChannel()
+      const nameCreate = args[0]
+      const privateBoolCreate = Number(args[1]) === 1 ? true : false
+      channelsStore.createChannel(nameCreate, privateBoolCreate)
       text.value = ''
       break
     case '/invite':
       const userNickname = args[0]
-      inviteUser(userNickname)
+      channelsStore.inviteUser(userNickname)
       text.value = ''
       break
     case '/close':
@@ -257,7 +196,7 @@ const handleCommand = () => {
       text.value = ''
       break
     case '/list':
-      listUsers()
+      channelsStore.listUsers()
       text.value = ''
       break
     case '/help':
@@ -298,29 +237,12 @@ const sendMessage = function () {
     }
 
     text.value = ''
+
     // scroll to bottom
     setTimeout(() => {
       chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight
     }, 10)
   }
-}
-
-const listUsers = async () => {
-  try {
-    if (selectedChannelId.value === null) {
-      console.error('No channel selected')
-      return
-    }
-    await channelsStore.listUsers(selectedChannelId.value)
-  } catch (error) {
-    console.error('Error listing users:', error)
-  }
-}
-
-const shouldDisplayName = (index: number) => {
-  if (index === 0) return true
-  if (selectedChannelId.value === null) return false
-  return messagesStore.messages[index].name !== messagesStore.messages[index - 1].name
 }
 
 watch(

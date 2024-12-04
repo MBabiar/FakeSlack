@@ -3,10 +3,12 @@ import { io } from 'socket.io-client'
 import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
+import { useChannelsStore } from './channels'
 
 export const useSocketStore = defineStore('socket', () => {
   const identityStore = useIdentityStore()
   const messagesStore = useMessagesStore()
+  const channelStore = useChannelsStore()
 
   const socket = ref()
 
@@ -67,6 +69,20 @@ export const useSocketStore = defineStore('socket', () => {
         ]
       }
     })
+
+    socket.value.on(
+      'channelInvited',
+      (data: { id: number; name: string; isAuthor: boolean; private: boolean }) => {
+        const newChannel = {
+          id: data.id,
+          name: data.name,
+          isAuthor: data.isAuthor,
+          private: data.private,
+          new: true
+        }
+        channelStore.channels.unshift(newChannel)
+      }
+    )
   }
 
   return {

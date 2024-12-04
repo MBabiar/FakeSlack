@@ -179,9 +179,10 @@
     </q-dialog>
 
     <q-dialog v-model="createChannelBool" persistent>
-      <q-card>
-        <q-card-section class="row items-center">
+      <q-card style="min-width: 350px">
+        <q-card-section>
           <q-input
+            ref="channelNameInput"
             filled
             v-model="channelName"
             label="Channel name"
@@ -189,11 +190,12 @@
             :rules="[(val) => (val && val.length > 0) || 'Please select a channel name']"
             style="width: 30em"
           />
+          <q-toggle v-model="privateChannelBool" label="Private Channel" color="primary" />
         </q-card-section>
 
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="q-pt-none">
           <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn label="Create" color="primary" v-close-popup @click="createChannel" />
+          <q-btn label="Create" color="primary" @click="handleCreateChannel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -224,7 +226,6 @@ import { ref, onMounted } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
-import axios from 'axios'
 
 // Router
 const router = useRouter()
@@ -235,6 +236,7 @@ const identityStore = useIdentityStore()
 
 // Variables
 const channelName = ref('')
+const channelNameInput = ref()
 const closeChannelId = ref(0)
 const confirmCloseChannel = ref(false)
 const confirmLeaveChannel = ref(false)
@@ -244,6 +246,7 @@ const isLoading = ref(true)
 const leaveChannelId = ref(0)
 const leftDrawerOpen = ref(false)
 const notificationsEnabled = ref(true)
+const privateChannelBool = ref(false)
 const state = ref('online')
 
 const selectChannel = (channel: number) => {
@@ -251,6 +254,14 @@ const selectChannel = (channel: number) => {
     channelsStore.selectChannel(channel)
   } catch (error) {
     console.error('Failed to select channel:', error)
+  }
+}
+
+const handleCreateChannel = async () => {
+  const isValid = await channelNameInput.value.validate()
+  if (isValid) {
+    channelsStore.createChannel(channelNameInput.value, privateChannelBool.value)
+    createChannelBool.value = false
   }
 }
 
@@ -269,29 +280,6 @@ const switchState = function (newState: string) {
 const leaveChannel = async (channel: number) => {
   channelsStore.leaveChannel(channel)
   leaveChannelId.value = 0
-  await channelsStore.loadChannels()
-  channelsStore.selectChannel(channelsStore.channels[0].id)
-}
-
-const createChannel = async () => {
-  try {
-    const response = await axios.post('http://localhost:3333/channels', {
-      name: channelName.value
-    })
-
-    if (response.status === 201) {
-      channelsStore.channels.push({
-        id: response.data.id,
-        name: channelName.value,
-        isAuthor: true,
-        new: true,
-        private: false
-      })
-      channelName.value = ''
-    }
-  } catch (error) {
-    console.error('Error creating channel:', error)
-  }
 }
 
 const closeChannel = () => {
@@ -311,10 +299,7 @@ defineOptions({
 
 onMounted(async () => {
   try {
-    await channelsStore.loadChannels()
-    if (channelsStore.channels.length > 0) {
-      selectChannel(channelsStore.channels[0].id)
-    }
+    await channelsStore.loadChannels(true)
   } catch (error) {
     console.error('Failed to load channels:', error)
   } finally {

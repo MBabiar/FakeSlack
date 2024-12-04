@@ -39,8 +39,6 @@
 
 3. vytvorenie komunikačného kanála (channel) cez príkazový riadok
     - do súkromného kanála môže pridávať/odoberať používateľov iba správca kanála cez príkazy /invite nickName a /revoke nickName
-    - do verejného kanála sa môže pridať ľubovolný používateľ cez príkaz /join channelName (ak kanál neexistuje, automaticky sa vytvorí)
-    - do verejného kanála môže člen kanála pozvať iného používateľa príkazom /invite nickName
     - vo verejnom kanáli môže člen "vyhodiť" iného člena príkazom /kick nickName. ak tak spravia aspoň 3 členovia, používateľ má "trvalý" ban pre daný kanál. správca môže používateľa vyhodiť "natrvalo" kedykoľvek príkazom /kick nickName, alebo naopak "obnovit" používateľovi prístup do kanála cez príkaz /invite
 4. používateľ je informovaný o každej novej správe prostredníctvom notifikácie
     - notifikácia sa vystavuje iba ak aplikácia nie je v stave "visible" (pozrite quasar docu App Visibility)
@@ -49,3 +47,6 @@
 5. používateľ si môže nastaviť stav (online, DND, offline)
     - ak je nastavený DND stav, neprichádzajú notifikácie
     - ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
+
+-   vyriešiť channel right-click, či chceme mať leave/close
+-   Notifikácie, keď je quasar open, tak stačí Notify, keď minimized, system notifications
