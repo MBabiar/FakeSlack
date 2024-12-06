@@ -4,8 +4,8 @@ import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
 import { useChannelsStore } from './channels'
-import { useWebNotification } from '@vueuse/core'
-import { AppVisibility, Notify } from 'quasar'
+import { useWebNotification, UseWebNotificationOptions } from '@vueuse/core'
+import { Notify } from 'quasar'
 
 export const useSocketStore = defineStore('socket', () => {
   const identityStore = useIdentityStore()
@@ -42,16 +42,20 @@ export const useSocketStore = defineStore('socket', () => {
         return
       }
 
-      const { isSupported, show } = useWebNotification({
+      console.log(newMessage.content)
+
+      const options: UseWebNotificationOptions = {
         title: 'New message from ' + newMessage.author.nickname,
         dir: 'auto',
         lang: 'en',
         renotify: true,
         tag: 'test',
         body: newMessage.content
-      })
+      }
 
-      if (isSupported.value && identityStore.status === 'online' && AppVisibility.appVisible) {
+      const { isSupported, show } = useWebNotification(options)
+
+      if (isSupported.value && identityStore.status === 'online') {
         console.log('Notification shown - app is in background')
         show()
       } else {
@@ -115,6 +119,37 @@ export const useSocketStore = defineStore('socket', () => {
         channelStore.channels.unshift(newChannel)
       }
     )
+
+    socket.value.on('channelRevoked', (channelId: number) => {
+      const channelName = channelStore.channels.find((channel) => channel.id === channelId)?.name
+      Notify.create({
+        type: 'warning',
+        message: 'You were removed from a channel: ' + channelName,
+        position: 'top'
+      })
+      channelStore.channels = channelStore.channels.filter((channel) => channel.id !== channelId)
+    })
+
+    socket.value.on('userBanned', (data: { userNickname: string; channelId: number }) => {
+      const channelName = channelStore.channels.find(
+        (channel) => channel.id === data.channelId
+      )?.name
+      Notify.create({
+        type: 'warning',
+        message: `User ${data.userNickname} was banned from channel: ${channelName}`,
+        position: 'top'
+      })
+    })
+
+    socket.value.on('channelDeleted', (channelId: number) => {
+      const channelName = channelStore.channels.find((channel) => channel.id === channelId)?.name
+      Notify.create({
+        type: 'warning',
+        message: 'Channel was deleted: ' + channelName,
+        position: 'top'
+      })
+      channelStore.channels = channelStore.channels.filter((channel) => channel.id !== channelId)
+    })
   }
 
   return {

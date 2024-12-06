@@ -110,7 +110,9 @@ const commandFormats = [
   { name: '/invite', format: '/invite <user>' },
   { name: '/close', format: '/close <channel>' },
   { name: '/list', format: '/list' },
-  { name: '/help', format: '/help' }
+  { name: '/help', format: '/help' },
+  { name: '/revoke', format: '/revoke <userName>' },
+  { name: '/kick', format: '/kick <userName>' }
 ]
 
 const isCommand = computed(() => text.value.startsWith('/'))
@@ -199,6 +201,16 @@ const handleCommand = () => {
       break
     case '/help':
       showHelp()
+      text.value = ''
+      break
+    case '/revoke':
+      const userToRevoke = args[0]
+      channelsStore.revokeUser(userToRevoke)
+      text.value = ''
+      break
+    case '/kick':
+      const userToKick = args[0]
+      channelsStore.kickUser(userToKick)
       text.value = ''
       break
     default:

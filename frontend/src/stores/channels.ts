@@ -28,17 +28,17 @@ export const useChannelsStore = defineStore('channels', () => {
     selectedChannelId.value = channelId
   }
 
-  const leaveChannelSocket = (channelId: number | null) => {
-    if (socketStore.socket && channelId !== null) {
-      socketStore.socket.emit('leaveChannel', { channelId })
+  const joinChannelSocket = (channelId: number) => {
+    if (socketStore.socket) {
+      socketStore.socket.emit('joinChannelSocket', { channelId })
+    } else {
+      console.error('Socket is not connected')
     }
   }
 
-  const joinChannelSocket = (channelId: number) => {
-    if (socketStore.socket) {
-      socketStore.socket.emit('joinChannel', { channelId })
-    } else {
-      console.error('Socket is not connected')
+  const leaveChannelSocket = (channelId: number | null) => {
+    if (socketStore.socket && channelId !== null) {
+      socketStore.socket.emit('leaveChannelSocket', { channelId })
     }
   }
 
@@ -130,26 +130,45 @@ export const useChannelsStore = defineStore('channels', () => {
     }
   }
 
-  const leaveChannel = async (channelId: number) => {
-    const response = await axios.delete(`http://localhost:3333/channel/leave/${channelId}`)
-    if (response.status === 200) {
-      if (response.data.message === 'Channel deleted') {
-        Notify.create({
-          type: 'positive',
-          message: 'Channel deleted',
-          position: 'top'
-        })
-      }
-      if (response.data.message === 'User left channel') {
-        Notify.create({
-          type: 'positive',
-          message: 'You left channel',
-          position: 'top'
-        })
-      }
+  const leaveChannel = async (channelId: number): Promise<void> => {
+    if (!socketStore.socket) {
+      console.error('Socket is not connected')
+      throw new Error('Socket not connected')
     }
-    loadChannels(true)
-    return
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (error: string) => {
+        console.error('Error leaving channel:', error)
+        Notify.create({
+          type: 'negative',
+          message: error,
+          position: 'top'
+        })
+        reject(error)
+      }
+
+      // Bind error handler
+      socketStore.socket.once('error', errorHandler)
+
+      // Listen for success response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      socketStore.socket.once('leaveChannelSuccess', (data: any) => {
+        socketStore.socket.off('error', errorHandler) // Remove error listener
+
+        Notify.create({
+          type: 'positive',
+          message: `You left channel ${data.channelName}`,
+          position: 'top'
+        })
+
+        channels.value = channels.value.filter((channel) => channel.id !== channelId)
+
+        resolve()
+      })
+
+      // Emit leave request
+      socketStore.socket.emit('leaveChannel', { channelId })
+    })
   }
 
   const listUsers = async () => {
@@ -203,8 +222,84 @@ export const useChannelsStore = defineStore('channels', () => {
       })
 
       // Emit invite request
-      const inviteChannelId = selectedChannelId.value
-      socketStore.socket.emit('inviteUser', { inviteChannelId, userNickname })
+      const channelId = selectedChannelId.value
+      socketStore.socket.emit('inviteUser', { channelId, userNickname })
+    })
+  }
+
+  const revokeUser = async (userNickname: string): Promise<void> => {
+    if (!socketStore.socket) {
+      console.error('Socket is not connected')
+      throw new Error('Socket not connected')
+    }
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (error: string) => {
+        console.error('Error revoking user:', error)
+        Notify.create({
+          type: 'negative',
+          message: error,
+          position: 'top'
+        })
+        reject(error)
+      }
+
+      // Bind error handler
+      socketStore.socket.once('error', errorHandler)
+
+      // Listen for success response
+      socketStore.socket.once('revokeUserSuccess', () => {
+        socketStore.socket.off('error', errorHandler) // Remove error listener
+
+        Notify.create({
+          type: 'positive',
+          message: `${userNickname} revoked successfully`,
+          position: 'top'
+        })
+        resolve()
+      })
+
+      // Emit revoke request
+      const channelId = selectedChannelId.value
+      socketStore.socket.emit('revokeUser', { channelId, userNickname })
+    })
+  }
+
+  const kickUser = async (userNickname: string): Promise<void> => {
+    if (!socketStore.socket) {
+      console.error('Socket is not connected')
+      throw new Error('Socket not connected')
+    }
+
+    return new Promise((resolve, reject) => {
+      const errorHandler = (error: string) => {
+        console.error('Error kicking user:', error)
+        Notify.create({
+          type: 'negative',
+          message: error,
+          position: 'top'
+        })
+        reject(error)
+      }
+
+      // Bind error handler
+      socketStore.socket.once('error', errorHandler)
+
+      // Listen for success response
+      socketStore.socket.once('kickUserSuccess', () => {
+        socketStore.socket.off('error', errorHandler) // Remove error listener
+
+        Notify.create({
+          type: 'positive',
+          message: `${userNickname} got vote for kick successfully`,
+          position: 'top'
+        })
+        resolve()
+      })
+
+      // Emit kick request
+      const channelId = selectedChannelId.value
+      socketStore.socket.emit('kickUser', { channelId, userNickname })
     })
   }
 
@@ -217,6 +312,8 @@ export const useChannelsStore = defineStore('channels', () => {
     loadChannels,
     selectChannel,
     selectedChannelId,
-    createChannel
+    createChannel,
+    revokeUser,
+    kickUser
   }
 })
