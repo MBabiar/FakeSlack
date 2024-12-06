@@ -13,6 +13,7 @@ export const useIdentityStore = defineStore('identity', () => {
   const lastName = ref()
   const nickname = ref()
   const token = ref()
+  const status = ref('online')
 
   const login = async (data: { email: string; password: string }) => {
     const response = await axios.post('http://localhost:3333/auth/login', {
@@ -108,6 +109,16 @@ export const useIdentityStore = defineStore('identity', () => {
     localStorage.removeItem('token')
   }
 
+  const switchStatus = async (newStatus: string) => {
+    status.value = newStatus
+    await axios.post('http://localhost:3333/switch-status', { status: newStatus })
+    if (newStatus === 'offline') {
+      socketStore.socket.disconnect()
+    } else {
+      socketStore.establishSocketConnection()
+    }
+  }
+
   return {
     checkLoggedIn,
     email,
@@ -118,6 +129,8 @@ export const useIdentityStore = defineStore('identity', () => {
     logout,
     nickname,
     register,
-    token
+    status,
+    token,
+    switchStatus
   }
 })

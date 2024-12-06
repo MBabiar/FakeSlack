@@ -57,8 +57,8 @@ export const useChannelsStore = defineStore('channels', () => {
   const createChannel = async (name: string, privateBool: boolean) => {
     try {
       const response = await axios.post('http://localhost:3333/channels', {
-        name: name,
-        private: privateBool
+        channelName: name,
+        privateBool: privateBool
       })
 
       if (response.status === 201) {
@@ -70,14 +70,18 @@ export const useChannelsStore = defineStore('channels', () => {
           private: privateBool
         })
       }
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       console.error('Error creating channel:', error)
+      Notify.create({
+        color: 'negative',
+        message: error.response.data.message,
+        position: 'top'
+      })
     }
   }
 
   const joinChannel = async (name: string, privateBool: boolean) => {
-    console.log(`Joining channel: ${name}`)
-
     try {
       const response = await axios.post('http://localhost:3333/channel/join', {
         channelName: name,
@@ -86,7 +90,35 @@ export const useChannelsStore = defineStore('channels', () => {
 
       if (response.status === 200) {
         console.log('Joined channel:', name)
+        channels.value.unshift({
+          id: response.data.id,
+          name: name,
+          isAuthor: false,
+          new: true,
+          private: privateBool
+        })
+        Notify.create({
+          type: 'positive',
+          message: `Joined channel: ${name}`,
+          position: 'top'
+        })
       }
+
+      if (response.status === 201) {
+        channels.value.unshift({
+          id: response.data.id,
+          name: name,
+          isAuthor: true,
+          new: true,
+          private: privateBool
+        })
+        Notify.create({
+          type: 'positive',
+          message: `Created and joined channel: ${name}`,
+          position: 'top'
+        })
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error joining channel:', error)
@@ -96,7 +128,6 @@ export const useChannelsStore = defineStore('channels', () => {
         position: 'top'
       })
     }
-    loadChannels(false)
   }
 
   const leaveChannel = async (channelId: number) => {

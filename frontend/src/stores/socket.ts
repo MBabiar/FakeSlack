@@ -4,6 +4,8 @@ import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
 import { useChannelsStore } from './channels'
+import { useWebNotification } from '@vueuse/core'
+import { AppVisibility, Notify } from 'quasar'
 
 export const useSocketStore = defineStore('socket', () => {
   const identityStore = useIdentityStore()
@@ -32,7 +34,37 @@ export const useSocketStore = defineStore('socket', () => {
         me: newMessage.author.id === identityStore.id
       }
 
-      messagesStore.messages.push(message)
+      if (newMessage.channelId === channelStore.selectedChannelId) {
+        messagesStore.messages.push(message)
+      }
+
+      if (newMessage.author.id === identityStore.id) {
+        return
+      }
+
+      const { isSupported, show } = useWebNotification({
+        title: 'New message from ' + newMessage.author.nickname,
+        dir: 'auto',
+        lang: 'en',
+        renotify: true,
+        tag: 'test',
+        body: newMessage.content
+      })
+
+      if (isSupported.value && identityStore.status === 'online' && AppVisibility.appVisible) {
+        console.log('Notification shown - app is in background')
+        show()
+      } else {
+        const channelName = channelStore.channels.find(
+          (channel) => channel.id === newMessage.channelId
+        )?.name
+        Notify.create({
+          type: 'positive',
+          message: `New message from: ${newMessage.author.nickname}<br>Channel: ${channelName}<br>Message: ${newMessage.content}`,
+          position: 'top',
+          html: true
+        })
+      }
     })
 
     socket.value.on('getTyping', (data: { userNickname: string; text: string }) => {
