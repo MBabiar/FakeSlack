@@ -83,7 +83,6 @@
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useIdentityStore } from 'src/stores/identity-store'
-import { useWebNotification } from '@vueuse/core'
 import { useMessagesStore } from 'src/stores/messages'
 import { QInfiniteScroll } from 'quasar'
 import { storeToRefs } from 'pinia'
@@ -101,7 +100,6 @@ const closeChannelId = ref(0)
 const firstTypingMember = ref('')
 const infiniteScroll = useTemplateRef<InstanceType<typeof QInfiniteScroll>>('infiniteScroll')
 const leaveChannelId = ref(0)
-const notificationsEnabled = ref(true)
 const showTypingIndicator = ref(false)
 const text = ref('')
 const commandFormats = [
@@ -219,25 +217,8 @@ const sendMessage = function () {
       console.error('No channel selected')
       return
     }
-
     messagesStore.sendMessage(selectedChannelId.value, text.value)
-
-    const { isSupported, show } = useWebNotification({
-      title: 'New message from Samuel Csető',
-      dir: 'auto',
-      lang: 'en',
-      renotify: true,
-      tag: 'test',
-      body: text.value
-    })
-
-    if (isSupported.value && notificationsEnabled.value) {
-      console.log('Notification shown')
-      show()
-    }
-
     text.value = ''
-
     // scroll to bottom
     setTimeout(() => {
       chatContainer.value!.scrollTop = chatContainer.value!.scrollHeight

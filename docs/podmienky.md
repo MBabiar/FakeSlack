@@ -48,5 +48,4 @@
     - ak je nastavený DND stav, neprichádzajú notifikácie
     - ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
 
--   vyriešiť channel right-click, či chceme mať leave/close
 -   Notifikácie, keď je quasar open, tak stačí Notify, keď minimized, system notifications

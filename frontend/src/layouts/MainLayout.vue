@@ -78,8 +78,10 @@
                 <q-item
                   clickable
                   v-close-popup
-                  :style="{ 'background-color': state === 'online' ? 'lightgreen' : '' }"
-                  @click="switchState('online')"
+                  :style="{
+                    'background-color': identityStore.status === 'online' ? 'lightgreen' : ''
+                  }"
+                  @click="identityStore.switchStatus('online')"
                 >
                   <q-item-section avatar>
                     <q-icon color="primary" name="task_alt" />
@@ -89,8 +91,8 @@
                 <q-item
                   clickable
                   v-close-popup
-                  @click="switchState('dnd')"
-                  :style="{ 'background-color': state === 'dnd' ? 'orange' : '' }"
+                  @click="identityStore.switchStatus('dnd')"
+                  :style="{ 'background-color': identityStore.status === 'dnd' ? 'orange' : '' }"
                 >
                   <q-item-section avatar>
                     <q-icon color="primary" name="do_not_disturb" />
@@ -100,8 +102,8 @@
                 <q-item
                   clickable
                   v-close-popup
-                  @click="switchState('offline')"
-                  :style="{ 'background-color': state === 'offline' ? 'red' : '' }"
+                  @click="identityStore.switchStatus('offline')"
+                  :style="{ 'background-color': identityStore.status === 'offline' ? 'red' : '' }"
                 >
                   <q-item-section avatar>
                     <q-icon color="primary" name="hide_source" />
@@ -247,7 +249,6 @@ const leaveChannelId = ref(0)
 const leftDrawerOpen = ref(false)
 const notificationsEnabled = ref(true)
 const privateChannelBool = ref(false)
-const state = ref('online')
 
 const selectChannel = (channel: number) => {
   try {
@@ -260,7 +261,7 @@ const selectChannel = (channel: number) => {
 const handleCreateChannel = async () => {
   const isValid = await channelNameInput.value.validate()
   if (isValid) {
-    channelsStore.createChannel(channelNameInput.value, privateChannelBool.value)
+    channelsStore.createChannel(channelName.value, privateChannelBool.value)
     createChannelBool.value = false
   }
 }
@@ -271,10 +272,6 @@ const toggleLeftDrawer = () => {
 
 const toggleNotifications = () => {
   notificationsEnabled.value = !notificationsEnabled.value
-}
-
-const switchState = function (newState: string) {
-  state.value = newState
 }
 
 const leaveChannel = async (channel: number) => {
