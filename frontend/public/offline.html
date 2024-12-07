@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>You are offline</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    #status {
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>You are offline</h1>
+  <p>Please check your internet connection and try again.</p>
+  <p id="status">Checking connection...</p>
+
+  <script>
+    function checkOnlineStatus() {
+      const status = document.getElementById('status');
+      
+      if (navigator.onLine) {
+        status.textContent = 'Back online! Redirecting...';
+        setTimeout(() => {
+          window.location.href = '/index';
+        }, 500);
+      } else {
+        status.textContent = 'Still offline. Checking connection...';
+      }
+    }
+
+    // Check immediately
+    checkOnlineStatus();
+    
+    // Listen for online/offline events
+    window.addEventListener('online', checkOnlineStatus);
+    window.addEventListener('offline', checkOnlineStatus);
+    
+    // Periodic check every 2 seconds
+    setInterval(checkOnlineStatus, 2000);
+  </script>
+</body>
+</html>

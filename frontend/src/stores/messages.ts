@@ -30,44 +30,49 @@ export const useMessagesStore = defineStore('messages', () => {
 
   const fetchMessagesForChannel = async (channelId: number) => {
     const fetchPage = pagination.value.page + 1
-    const response = await axios.get(
-      `http://localhost:3333/channel/messages/${channelId}/${fetchPage}`
-    )
+    try {
+      const response = await axios.get(
+        `http://localhost:3333/channel/messages/${channelId}/${fetchPage}`
+      )
 
-    if (response.status !== 200) {
-      console.error('Error:', response.data)
-      return
+      if (response.status !== 200) {
+        console.error('Error:', response.data)
+        return
+      }
+
+      const paginationResp = response.data.pagination
+      const messagesResp = response.data.messages
+
+      pagination.value = {
+        page: paginationResp.page as number,
+        pageSize: paginationResp.pageSize,
+        total: paginationResp.total,
+        totalPages: paginationResp.totalPages
+      }
+
+      const newMessages = messagesResp.map(
+        (message: {
+          id: number
+          channelId: number
+          author: { id: number; nickname: string }
+          content: string
+          createdAt: string
+        }) => ({
+          id: message.id,
+          channelId: message.channelId,
+          name: message.author.nickname,
+          text: [message.content],
+          me: message.author.id === identityStore.id
+        })
+      )
+
+      messages.value = [...newMessages, ...messages.value].filter(
+        (message, index, self) => index === self.findIndex((m) => m.id === message.id)
+      )
+    } catch (error) {
+      console.error('Error:', error)
+      await new Promise((resolve) => setTimeout(resolve, 3000))
     }
-
-    const paginationResp = response.data.pagination
-    const messagesResp = response.data.messages
-
-    pagination.value = {
-      page: paginationResp.page as number,
-      pageSize: paginationResp.pageSize,
-      total: paginationResp.total,
-      totalPages: paginationResp.totalPages
-    }
-
-    const newMessages = messagesResp.map(
-      (message: {
-        id: number
-        channelId: number
-        author: { id: number; nickname: string }
-        content: string
-        createdAt: string
-      }) => ({
-        id: message.id,
-        channelId: message.channelId,
-        name: message.author.nickname,
-        text: [message.content],
-        me: message.author.id === identityStore.id
-      })
-    )
-
-    messages.value = [...newMessages, ...messages.value].filter(
-      (message, index, self) => index === self.findIndex((m) => m.id === message.id)
-    )
   }
 
   const sendMessage = (channelId: number, text: string) => {
