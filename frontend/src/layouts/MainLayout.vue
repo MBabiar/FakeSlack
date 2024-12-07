@@ -1,5 +1,8 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+    <q-banner v-if="!networkStore.isOnline" class="bg-warning text-white">
+      You are currently offline. Some features may be unavailable.
+    </q-banner>
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
       <div style="height: 100vh; display: flex; flex-direction: column">
         <q-scroll-area style="flex: 1">
@@ -228,6 +231,7 @@ import { ref, onMounted } from 'vue'
 import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
+import { useNetworkStore } from 'src/stores/network-store'
 
 // Router
 const router = useRouter()
@@ -235,6 +239,8 @@ const router = useRouter()
 // Stores
 const channelsStore = useChannelsStore()
 const identityStore = useIdentityStore()
+
+const networkStore = useNetworkStore()
 
 // Variables
 const channelName = ref('')

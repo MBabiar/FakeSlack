@@ -29,6 +29,7 @@ export const useIdentityStore = defineStore('identity', () => {
       lastName.value = response.data.user.lastName
       email.value = response.data.user.email
       nickname.value = response.data.user.nickname
+      status.value = response.data.user.status
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       if (!socketStore.socket) {
         socketStore.establishSocketConnection()
@@ -92,6 +93,7 @@ export const useIdentityStore = defineStore('identity', () => {
     lastName.value = response.data.lastName
     email.value = response.data.email
     nickname.value = response.data.nickname
+    status.value = response.data.status
 
     if (!socketStore.socket) {
       socketStore.establishSocketConnection()
@@ -110,12 +112,22 @@ export const useIdentityStore = defineStore('identity', () => {
   }
 
   const switchStatus = async (newStatus: string) => {
-    status.value = newStatus
-    await axios.post('http://localhost:3333/switch-status', { status: newStatus })
-    if (newStatus === 'offline') {
-      socketStore.socket.disconnect()
-    } else {
-      socketStore.establishSocketConnection()
+    try {
+      const response = await axios.post('http://localhost:3333/switch-status', {
+        status: newStatus
+      })
+      if (response.status !== 200) {
+        console.error('Error:', response.data)
+        return
+      }
+      status.value = newStatus
+      if (newStatus === 'offline') {
+        socketStore.socket.disconnect()
+      } else {
+        socketStore.establishSocketConnection()
+      }
+    } catch (e) {
+      console.log(e)
     }
   }
 
