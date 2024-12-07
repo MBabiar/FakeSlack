@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "include": ["*.ts"],
+  "exclude": [".eslintrc.js"],
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "../dist/pwa"
+  }
+}
