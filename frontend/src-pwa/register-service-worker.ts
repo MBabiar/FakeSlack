@@ -7,6 +7,10 @@ if ('serviceWorker' in navigator) {
   })
 }
 
+if ('Notification' in window) {
+  Notification.requestPermission()
+}
+
 register(process.env.SERVICE_WORKER_FILE as string, {
   ready() {
     console.log('App is being served from cache by a service worker.')
