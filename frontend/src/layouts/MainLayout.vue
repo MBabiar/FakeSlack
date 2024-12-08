@@ -117,7 +117,11 @@
                 <q-item clickable v-close-popup>
                   <q-item-section>Notifications only mentions</q-item-section>
                   <q-item-section>
-                    <q-toggle v-model="messagesStore.notificationsOnlyMentions" color="primary" />
+                    <q-toggle
+                      v-model="identityStore.notificationsOnlyMentions"
+                      color="primary"
+                      @update:model-value="identityStore.updateNotificationPreference"
+                    />
                   </q-item-section>
                 </q-item>
                 <q-separator />
@@ -232,7 +236,6 @@ import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
 import { useNetworkStore } from 'src/stores/network-store'
-import { useMessagesStore } from 'src/stores/messages'
 
 // Router
 const router = useRouter()
@@ -240,7 +243,6 @@ const router = useRouter()
 // Stores
 const channelsStore = useChannelsStore()
 const identityStore = useIdentityStore()
-const messagesStore = useMessagesStore()
 
 const networkStore = useNetworkStore()
 
