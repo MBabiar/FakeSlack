@@ -115,9 +115,9 @@
                 </q-item>
                 <q-separator />
                 <q-item clickable v-close-popup>
-                  <q-item-section @click="toggleNotifications">Notifications</q-item-section>
+                  <q-item-section>Notifications only mentions</q-item-section>
                   <q-item-section>
-                    <q-toggle v-model="notificationsEnabled" color="primary" />
+                    <q-toggle v-model="messagesStore.notificationsOnlyMentions" color="primary" />
                   </q-item-section>
                 </q-item>
                 <q-separator />
@@ -232,6 +232,7 @@ import { useChannelsStore } from 'src/stores/channels'
 import { useRouter } from 'vue-router'
 import { useIdentityStore } from 'src/stores/identity-store'
 import { useNetworkStore } from 'src/stores/network-store'
+import { useMessagesStore } from 'src/stores/messages'
 
 // Router
 const router = useRouter()
@@ -239,6 +240,7 @@ const router = useRouter()
 // Stores
 const channelsStore = useChannelsStore()
 const identityStore = useIdentityStore()
+const messagesStore = useMessagesStore()
 
 const networkStore = useNetworkStore()
 
@@ -253,7 +255,6 @@ const createChannelBool = ref(false)
 const isLoading = ref(true)
 const leaveChannelId = ref(0)
 const leftDrawerOpen = ref(false)
-const notificationsEnabled = ref(true)
 const privateChannelBool = ref(false)
 
 const selectChannel = (channel: number) => {
@@ -274,10 +275,6 @@ const handleCreateChannel = async () => {
 
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
-}
-
-const toggleNotifications = () => {
-  notificationsEnabled.value = !notificationsEnabled.value
 }
 
 const leaveChannel = async (channel: number) => {

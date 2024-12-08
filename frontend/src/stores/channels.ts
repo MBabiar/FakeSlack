@@ -21,6 +21,10 @@ export const useChannelsStore = defineStore('channels', () => {
   const selectedChannelId = ref<number | null>(null)
 
   const selectChannel = (channelId: number) => {
+    if (selectedChannelId.value === channelId) {
+      return
+    }
+
     messagesStore.pagination.page = 0
     messagesStore.messages = []
     leaveChannelSocket(selectedChannelId.value)

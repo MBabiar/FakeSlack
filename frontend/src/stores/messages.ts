@@ -23,6 +23,7 @@ interface typingMember {
 export const useMessagesStore = defineStore('messages', () => {
   const socketStore = useSocketStore()
   const identityStore = useIdentityStore()
+  const notificationsOnlyMentions = ref(false)
 
   const messages = ref<Message[]>([])
   const typingMembers = ref<typingMember[]>([])
@@ -97,6 +98,7 @@ export const useMessagesStore = defineStore('messages', () => {
     typingMembers,
     fetchMessagesForChannel,
     sendMessage,
-    sendTyping
+    sendTyping,
+    notificationsOnlyMentions
   }
 })

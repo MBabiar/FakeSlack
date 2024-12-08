@@ -1,4 +1,6 @@
 {
+  "name": "FakeSlack",
+  "description": "FakeSlack Chat Application",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#027be3",
@@ -28,5 +30,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "permissions": ["notifications"]
 }

@@ -4,7 +4,6 @@ import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
 import { useChannelsStore } from './channels'
-import { useWebNotification, UseWebNotificationOptions } from '@vueuse/core'
 import { Notify } from 'quasar'
 
 export const useSocketStore = defineStore('socket', () => {
@@ -13,6 +12,56 @@ export const useSocketStore = defineStore('socket', () => {
   const channelStore = useChannelsStore()
 
   const socket = ref()
+
+  const isMessageHighlighted = (text: string[]) => {
+    const textArray = Array.isArray(text) ? text : [text]
+    return textArray.some((text) => {
+      return (
+        text.includes(`@${identityStore.nickname}`) ||
+        text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
+      )
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const showNotification = async (message: any, channelName: string) => {
+    // Check browser support
+    if (!('Notification' in window)) {
+      console.warn('Notifications not supported in this browser')
+      return
+    }
+
+    try {
+      // Request permission if not granted
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') return
+      }
+
+      // Create notification with full options
+      const notification = new Notification(`Message in ${channelName}`, {
+        body: `${message.author.nickname}: ${message.content}`,
+        icon: '/icons/favicon-128x128.png',
+        badge: '/icons/favicon-32x32.png',
+        tag: `msg-${message.channelId}`,
+        requireInteraction: true,
+        silent: false,
+        data: {
+          channelId: message.channelId,
+          messageId: message.id
+        }
+      })
+
+      // Add click handler to focus window
+      notification.onclick = () => {
+        window.focus()
+        channelStore.selectChannel(message.channelId)
+        notification.close()
+      }
+    } catch (error) {
+      console.error('Error showing notification:', error)
+    }
+  }
 
   const establishSocketConnection = () => {
     console.log('establishing socket connection')
@@ -41,33 +90,22 @@ export const useSocketStore = defineStore('socket', () => {
       if (newMessage.author.id === identityStore.id) {
         return
       }
-
-      console.log(newMessage.content)
-
-      const options: UseWebNotificationOptions = {
-        title: 'New message from ' + newMessage.author.nickname,
-        dir: 'auto',
-        lang: 'en',
-        renotify: true,
-        tag: 'test',
-        body: newMessage.content
-      }
-
-      const { isSupported, show } = useWebNotification(options)
-
-      if (isSupported.value && identityStore.status === 'online') {
-        console.log('Notification shown - app is in background')
-        show()
-      } else {
-        const channelName = channelStore.channels.find(
-          (channel) => channel.id === newMessage.channelId
-        )?.name
-        Notify.create({
-          type: 'positive',
-          message: `New message from: ${newMessage.author.nickname}<br>Channel: ${channelName}<br>Message: ${newMessage.content}`,
-          position: 'top',
-          html: true
-        })
+      if (!document.hasFocus() && identityStore.status === 'online') {
+        if (messagesStore.notificationsOnlyMentions && isMessageHighlighted(newMessage.text)) {
+          const channelName = channelStore.channels.find(
+            (channel) => channel.id === newMessage.channelId
+          )?.name
+          if (channelName) {
+            showNotification(newMessage, channelName)
+          }
+        } else {
+          const channelName = channelStore.channels.find(
+            (channel) => channel.id === newMessage.channelId
+          )?.name
+          if (channelName) {
+            showNotification(newMessage, channelName)
+          }
+        }
       }
     })
 
