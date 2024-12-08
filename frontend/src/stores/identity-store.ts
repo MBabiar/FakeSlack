@@ -16,6 +16,7 @@ export const useIdentityStore = defineStore('identity', () => {
   const nickname = ref()
   const token = ref()
   const status = ref('online')
+  const notificationsOnlyMentions = ref(false)
 
   const login = async (data: { email: string; password: string }) => {
     const response = await axios.post('http://localhost:3333/auth/login', {
@@ -32,12 +33,11 @@ export const useIdentityStore = defineStore('identity', () => {
       email.value = response.data.user.email
       nickname.value = response.data.user.nickname
       status.value = response.data.user.status
+      notificationsOnlyMentions.value = response.data.user.notificationsOnlyMentions
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
       if (!socketStore.socket) {
         socketStore.establishSocketConnection()
       }
-
-      console.log('Logged in')
 
       Notify.create({
         type: 'positive',
@@ -81,6 +81,15 @@ export const useIdentityStore = defineStore('identity', () => {
     const storedToken = localStorage.getItem('token')
 
     if (!storedToken) {
+      token.value = null
+      id.value = null
+      firstName.value = null
+      lastName.value = null
+      email.value = null
+      nickname.value = null
+      status.value = 'offline'
+      localStorage.removeItem('token')
+      window.location.href = '/auth/login'
       return
     }
 
@@ -88,17 +97,48 @@ export const useIdentityStore = defineStore('identity', () => {
 
     axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
 
-    const response = await axios.get('http://localhost:3333/auth/me')
+    try {
+      const response = await axios.get('http://localhost:3333/auth/me')
 
-    id.value = response.data.id
-    firstName.value = response.data.firstName
-    lastName.value = response.data.lastName
-    email.value = response.data.email
-    nickname.value = response.data.nickname
-    status.value = response.data.status
+      if (response.status !== 200) {
+        token.value = null
+        id.value = null
+        firstName.value = null
+        lastName.value = null
+        email.value = null
+        nickname.value = null
+        status.value = 'offline'
+        localStorage.removeItem('token')
+        window.location.href = '/auth/login'
+        return
+      }
 
-    if (!socketStore.socket) {
-      socketStore.establishSocketConnection()
+      id.value = response.data.id
+      firstName.value = response.data.firstName
+      lastName.value = response.data.lastName
+      email.value = response.data.email
+      nickname.value = response.data.nickname
+      status.value = response.data.status
+      if (response.data.notificationsOnlyMentions === 0) {
+        notificationsOnlyMentions.value = false
+      } else {
+        notificationsOnlyMentions.value = true
+      }
+
+      if (!socketStore.socket) {
+        socketStore.establishSocketConnection()
+      }
+    } catch (e) {
+      token.value = null
+      id.value = null
+      firstName.value = null
+      lastName.value = null
+      email.value = null
+      nickname.value = null
+      status.value = 'offline'
+      localStorage.removeItem('token')
+      window.location.href = '/auth/login'
+      return
     }
   }
 
@@ -115,7 +155,7 @@ export const useIdentityStore = defineStore('identity', () => {
 
   const switchStatus = async (newStatus: string) => {
     try {
-      const response = await axios.post('http://localhost:3333/switch-status', {
+      const response = await axios.put('http://localhost:3333/switch-status', {
         status: newStatus
       })
       if (response.status !== 200) {
@@ -139,6 +179,21 @@ export const useIdentityStore = defineStore('identity', () => {
     }
   }
 
+  const updateNotificationPreference = async (value: boolean) => {
+    try {
+      await axios.put('http://localhost:3333/switch-notifications', {
+        notificationsOnlyMentions: value
+      })
+      notificationsOnlyMentions.value = value
+    } catch (error) {
+      console.error('Failed to update notification preferences:', error)
+      Notify.create({
+        message: 'Failed to update notification preferences',
+        color: 'negative'
+      })
+    }
+  }
+
   return {
     checkLoggedIn,
     email,
@@ -151,6 +206,8 @@ export const useIdentityStore = defineStore('identity', () => {
     register,
     status,
     token,
-    switchStatus
+    switchStatus,
+    notificationsOnlyMentions,
+    updateNotificationPreference
   }
 })

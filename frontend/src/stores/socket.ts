@@ -22,7 +22,6 @@ export const useSocketStore = defineStore('socket', () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const showNotification = async (message: any, channelName: string) => {
-    console.log('showing notification')
     if (!('serviceWorker' in navigator)) {
       console.warn('Service Workers not supported')
       return
@@ -90,7 +89,7 @@ export const useSocketStore = defineStore('socket', () => {
         return
       }
       if (!AppVisibility.appVisible && identityStore.status === 'online') {
-        if (messagesStore.notificationsOnlyMentions) {
+        if (identityStore.notificationsOnlyMentions) {
           if (isMessageHighlighted(newMessage.content)) {
             const channelName = channelStore.channels.find(
               (channel) => channel.id === newMessage.channelId
