@@ -37,12 +37,4 @@
 
 # TODO
 
-4. používateľ je informovaný o každej novej správe prostredníctvom notifikácie
-    - notifikácia sa vystavuje iba ak aplikácia nie je v stave "visible" (pozrite quasar docu App Visibility)
-    - notifikácia obsahuje časť zo správy a odosielateľa
-    - používateľ si môže nastaviť, aby mu chodili notifikácie iba pre správy, ktoré sú mu adresované
-5. používateľ si môže nastaviť stav (online, DND, offline)
-    - ak je nastavený DND stav, neprichádzajú notifikácie
-    - ak je nastavený offline stav, neprichádzajú používateľovi správy, po prepnutí do online sú kanály automaticky aktualizované
-
 -   repo.txt (link na GITHUB repozitár)

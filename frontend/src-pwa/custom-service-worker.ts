@@ -9,6 +9,44 @@ self.__WB_MANIFEST
 const CACHE_NAME = 'offline-cache-v1'
 const OFFLINE_PAGE = 'offline.html'
 
+self.addEventListener('push', (event: PushEvent) => {
+  if (!event.data) return
+
+  const data = event.data.json()
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/favicon-128x128.png',
+      badge: '/icons/favicon-32x32.png',
+      tag: `msg-${data.channelId}`,
+      requireInteraction: true,
+      data: {
+        channelId: data.channelId,
+        messageId: data.messageId
+      }
+    })
+  )
+})
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
+  event.notification.close()
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      const client = clientList[0]
+      if (client) {
+        client.focus()
+        client.postMessage({
+          type: 'NOTIFICATION_CLICK',
+          channelId: event.notification.data.channelId
+        })
+      }
+    })
+  )
+})
+
 // Install event - cache offline page
 self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(

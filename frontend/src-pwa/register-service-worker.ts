@@ -5,10 +5,14 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     console.log('Service Worker controller changed')
   })
-}
 
-if ('Notification' in window) {
-  Notification.requestPermission()
+  navigator.serviceWorker.register('/custom-service-worker.js')
+  // Request notification permission
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted')
+    }
+  })
 }
 
 register(process.env.SERVICE_WORKER_FILE as string, {
@@ -52,17 +56,25 @@ register(process.env.SERVICE_WORKER_FILE as string, {
   },
   updated() {
     console.log('New content is available; please refresh.')
-    Notify.create({
-      message: 'New content available, please refresh',
-      color: 'info',
-      actions: [
-        {
-          label: 'Refresh',
-          handler: () => {
-            window.location.reload()
-          }
+
+    // Clear all caches including precache
+    Promise.all([
+      // Clear all caches
+      caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))),
+
+      // Unregister service worker
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        if (registration) {
+          registration.unregister()
         }
-      ]
+      })
+    ]).then(() => {
+      console.log('Caches cleared and service worker unregistered')
+      window.location.reload()
+      Notify.create({
+        message: 'New content loaded.',
+        color: 'positive'
+      })
     })
   },
   offline() {
