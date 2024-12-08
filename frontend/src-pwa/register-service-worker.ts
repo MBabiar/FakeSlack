@@ -70,7 +70,7 @@ register(process.env.SERVICE_WORKER_FILE as string, {
       })
     ]).then(() => {
       console.log('Caches cleared and service worker unregistered')
-      window.location.reload()
+      // window.location.reload()
       Notify.create({
         message: 'New content loaded.',
         color: 'positive'

@@ -89,7 +89,7 @@ export const useIdentityStore = defineStore('identity', () => {
       nickname.value = null
       status.value = 'offline'
       localStorage.removeItem('token')
-      window.location.href = '/auth/login'
+      redirect: () => ({ name: 'login' })
       return
     }
 
@@ -109,7 +109,7 @@ export const useIdentityStore = defineStore('identity', () => {
         nickname.value = null
         status.value = 'offline'
         localStorage.removeItem('token')
-        window.location.href = '/auth/login'
+        redirect: () => ({ name: 'login' })
         return
       }
 
@@ -137,7 +137,7 @@ export const useIdentityStore = defineStore('identity', () => {
       nickname.value = null
       status.value = 'offline'
       localStorage.removeItem('token')
-      window.location.href = '/auth/login'
+      redirect: () => ({ name: 'login' })
       return
     }
   }

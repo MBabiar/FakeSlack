@@ -1,0 +1,2 @@
+Frontend:   https://github.com/MBabiar/FakeSlack
+Backend:    https://github.com/samuelcseto/FakeSlackServer
