@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { useIdentityStore } from './identity-store'
 import { useMessagesStore } from './messages'
 import { useChannelsStore } from './channels'
-import { Notify } from 'quasar'
+import { Notify, AppVisibility } from 'quasar'
 
 export const useSocketStore = defineStore('socket', () => {
   const identityStore = useIdentityStore()
@@ -13,58 +13,57 @@ export const useSocketStore = defineStore('socket', () => {
 
   const socket = ref()
 
-  const isMessageHighlighted = (text: string[]) => {
-    const textArray = Array.isArray(text) ? text : [text]
-    return textArray.some((text) => {
-      return (
-        text.includes(`@${identityStore.nickname}`) ||
-        text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
-      )
-    })
+  const isMessageHighlighted = (text: string) => {
+    return (
+      text.includes(`@${identityStore.nickname}`) ||
+      text.includes(`@${identityStore.firstName} ${identityStore.lastName}`)
+    )
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const showNotification = async (message: any, channelName: string) => {
-    // Check browser support
-    if (!('Notification' in window)) {
-      console.warn('Notifications not supported in this browser')
+    console.log('showing notification')
+    if (!('serviceWorker' in navigator)) {
+      console.warn('Service Workers not supported')
       return
     }
 
     try {
-      // Request permission if not granted
-      if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission()
-        if (permission !== 'granted') return
-      }
+      const registration = await navigator.serviceWorker.ready
 
-      // Create notification with full options
-      const notification = new Notification(`Message in ${channelName}`, {
+      // Send notification data to Service Worker
+      await registration.showNotification(`Message in ${channelName}`, {
         body: `${message.author.nickname}: ${message.content}`,
         icon: '/icons/favicon-128x128.png',
         badge: '/icons/favicon-32x32.png',
         tag: `msg-${message.channelId}`,
         requireInteraction: true,
-        silent: false,
         data: {
           channelId: message.channelId,
           messageId: message.id
         }
       })
-
-      // Add click handler to focus window
-      notification.onclick = () => {
-        window.focus()
-        channelStore.selectChannel(message.channelId)
-        notification.close()
-      }
     } catch (error) {
       console.error('Error showing notification:', error)
     }
   }
 
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data.type === 'NOTIFICATION_CLICK') {
+      channelStore.selectChannel(event.data.channelId)
+    }
+  })
+
   const establishSocketConnection = () => {
     console.log('establishing socket connection')
+    if (socket.value) {
+      console.log('socket already exists')
+      return
+    }
+    if (identityStore.status === 'offline') {
+      console.log('user is offline')
+      return
+    }
     const sock = io('http://localhost:3333', { auth: { token: identityStore.token } })
     socket.value = sock
     defineSocketListeners()
@@ -90,13 +89,15 @@ export const useSocketStore = defineStore('socket', () => {
       if (newMessage.author.id === identityStore.id) {
         return
       }
-      if (!document.hasFocus() && identityStore.status === 'online') {
-        if (messagesStore.notificationsOnlyMentions && isMessageHighlighted(newMessage.text)) {
-          const channelName = channelStore.channels.find(
-            (channel) => channel.id === newMessage.channelId
-          )?.name
-          if (channelName) {
-            showNotification(newMessage, channelName)
+      if (!AppVisibility.appVisible && identityStore.status === 'online') {
+        if (messagesStore.notificationsOnlyMentions) {
+          if (isMessageHighlighted(newMessage.content)) {
+            const channelName = channelStore.channels.find(
+              (channel) => channel.id === newMessage.channelId
+            )?.name
+            if (channelName) {
+              showNotification(newMessage, channelName)
+            }
           }
         } else {
           const channelName = channelStore.channels.find(

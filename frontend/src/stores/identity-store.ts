@@ -3,9 +3,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { Notify } from 'quasar'
 import { useSocketStore } from './socket'
+import { useChannelsStore } from './channels'
 
 export const useIdentityStore = defineStore('identity', () => {
   const socketStore = useSocketStore()
+  const channelStore = useChannelsStore()
 
   const email = ref()
   const firstName = ref()
@@ -123,8 +125,14 @@ export const useIdentityStore = defineStore('identity', () => {
       status.value = newStatus
       if (newStatus === 'offline') {
         socketStore.socket.disconnect()
+        socketStore.socket.removeAllListeners()
+        socketStore.socket.close()
+        socketStore.socket = null
       } else {
         socketStore.establishSocketConnection()
+        if (channelStore.selectedChannelId) {
+          channelStore.selectChannel(channelStore.selectedChannelId, true)
+        }
       }
     } catch (e) {
       console.log(e)

@@ -20,8 +20,8 @@ export const useChannelsStore = defineStore('channels', () => {
   const channels = ref<Channel[]>([])
   const selectedChannelId = ref<number | null>(null)
 
-  const selectChannel = (channelId: number) => {
-    if (selectedChannelId.value === channelId) {
+  const selectChannel = (channelId: number, reset = false) => {
+    if (selectedChannelId.value === channelId && !reset) {
       return
     }
 
