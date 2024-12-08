@@ -17,7 +17,7 @@ interface Message {
 interface typingMember {
   userNickname: string
   text: string
-  timeoutId: NodeJS.Timeout
+  timeoutId: ReturnType<typeof setTimeout>;
 }
 
 export const useMessagesStore = defineStore('messages', () => {
